@@ -184,3 +184,32 @@ gear-sealer-pro/
 - **影响**：仅加载期依赖检查；产物名 `gearsealerpro-1.18.2-0.1.1.jar`。
 - **生效**：2026-11-21
 - **状态**：ACTIVE
+
+### A6 · 2026-11-21 · 提出人：user（截图反馈 5 项）
+
+- **类型**：补丁（UI / 交互，0.1.1 → 0.1.2）
+- **关联**：A5；用户截图与 5 条反馈
+- **根因与变更**：
+  1. **词条重复、选中一个两个都亮**：`VaultGearModifier.AffixType` 的枚举顺序是
+     `IMPLICIT(0) / PREFIX(1) / SUFFIX(2)`，旧代码用 `type == 0` 判前缀，导致前后缀两条
+     都落进"后缀"侧的过滤结果。改为「词条只按 id 去重，条目携带 side 位掩码
+     （1=前缀 / 2=后缀）」。
+  2. **前后缀为什么分**：封印词条最终必须落进前缀或后缀槽。**替换**时由目标词条决定，
+     只有**新增词条**时才需要选槽位 —— 因此前缀/后缀切换改为只在新增模式显示。
+  3. **只显示最低档数值**：`VaultGearModifier#getDisplay(..., displayDetail)` 的第 4 个参数
+     改为 `true`，文案会追加配置区间（如 `(1 - 3)`）。样例值仍用固定种子生成。
+  4. **装备 tooltip 消失**：`super.render()` 先画 tooltip，随后自绘面板把它盖住；
+     改为在自绘结束后对 `hoveredSlot` 重绘一次 tooltip。
+  5. **面板太窄**：`common/PanelLayout` 宽度 176 → **240**，左右列表各 110，
+     槽位坐标同步重排（`GearSealerProMenu`），并保持与 common 布局常量一致。
+  6. 附带：选择替换目标后，若当前词条仍允许该侧则保留选择（不再无条件清空）。
+- **证据**：
+  - `.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon` → `BUILD SUCCESSFUL`（含新增的两个 SelectionModel 单测）。
+  - 产物 `adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.1.2.jar`；
+    `mods.toml` 展开：`version="0.1.2"`、`license="MIT"`、`authors="xiami"`、
+    `the_vault` `versionRange="[1.18.2-3.21.6,)"`。
+  - tag `v0.1.2-1.18.2` 已推送。
+- **未验证**：游戏内实际观感与交互（需用户替换 jar 后确认）。
+- **遗留**：`getDisplay(..., true)` 标注为 `@OnlyIn(Dist.CLIENT)`，服务端计算列表时调用它
+  仅保证**集成服务器（单人）**可用；专用服务器需要改成服务端算 id/范围、客户端拼文案。
+- **状态**：ACTIVE
