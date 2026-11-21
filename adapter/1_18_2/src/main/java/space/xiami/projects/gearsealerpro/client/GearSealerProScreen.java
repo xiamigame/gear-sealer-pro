@@ -38,9 +38,11 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
     private static final int LEFT_LIST_W = PanelLayout.LEFT_LIST_WIDTH;
     private static final int RIGHT_LIST_X = PanelLayout.RIGHT_LIST_X;
     private static final int RIGHT_LIST_W = PanelLayout.RIGHT_LIST_WIDTH;
+    private static final int TOGGLE_X = PanelLayout.TOGGLE_X;
     private static final int TOGGLE_Y = PanelLayout.TOGGLE_Y;
     private static final int TOGGLE_W = PanelLayout.TOGGLE_WIDTH;
     private static final int TOGGLE_H = PanelLayout.TOGGLE_HEIGHT;
+    private static final int TOGGLE_GAP = PanelLayout.TOGGLE_GAP;
     private static final int SEAL_X = PanelLayout.SEAL_X;
     private static final int SEAL_Y = PanelLayout.SEAL_Y;
     private static final int SEAL_W = PanelLayout.SEAL_WIDTH;
@@ -85,10 +87,16 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         super.render(pose, mouseX, mouseY, partialTick);
         MsgSyncOptions data = ClientSealData.get();
         this.drawHeaders(pose);
-        this.drawToggles(pose, mouseX, mouseY, data);
+        this.drawSideToggles(pose, mouseX, mouseY, data);
         this.drawLists(pose, mouseX, mouseY, data);
         this.drawCost(pose, data);
         this.drawSealButton(pose, mouseX, mouseY, data);
+
+        // Item tooltips are drawn inside super.render(), then covered by our own panel
+        // drawing above, so redraw the hovered slot's tooltip on top.
+        if (this.hoveredSlot != null && this.hoveredSlot.hasItem() && this.menu.getCarried().isEmpty()) {
+            this.renderTooltip(pose, this.hoveredSlot.getItem(), mouseX, mouseY);
+        }
         if (this.hoveredOption != null) {
             this.renderComponentTooltip(pose, List.of(this.hoveredOption), mouseX, mouseY);
         } else if (this.hoveredTarget != null) {
@@ -131,24 +139,29 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
                 this.leftPos + RIGHT_LIST_X, this.topPos + 84, 0xFFD8B45A);
     }
 
-    private void drawToggles(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
-        boolean lockedToTarget = !this.selection.isAddMode();
-        this.drawToggle(pose, mouseX, mouseY, LEFT_LIST_X, true, lockedToTarget);
-        this.drawToggle(pose, mouseX, mouseY, LEFT_LIST_X + TOGGLE_W + 4, false, lockedToTarget);
+    /**
+     * The affix side is only a real choice when adding a new affix; when replacing, the side
+     * is decided by the target row the player picked.
+     */
+    private void drawSideToggles(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
+        if (!this.selection.isAddMode() || !data.hasGear) {
+            return;
+        }
+        boolean prefix = this.selection.effectivePrefix();
+        this.drawToggle(pose, mouseX, mouseY, TOGGLE_X, prefix, true);
+        this.drawToggle(pose, mouseX, mouseY, TOGGLE_X + TOGGLE_W + TOGGLE_GAP, !prefix, false);
     }
 
-    private void drawToggle(PoseStack pose, int mouseX, int mouseY, int x, boolean prefix,
-                            boolean lockedToTarget) {
+    private void drawToggle(PoseStack pose, int mouseX, int mouseY, int x, boolean prefix, boolean active) {
         int screenX = this.leftPos + x;
         int screenY = this.topPos + TOGGLE_Y;
-        boolean active = this.selection.effectivePrefix() == prefix;
         boolean hovered = PanelLayout.inside(mouseX, mouseY, screenX, screenY, TOGGLE_W, TOGGLE_H);
-        int background = active ? 0xFF4A6B34 : (hovered && !lockedToTarget ? 0xFF3A3A44 : 0xFF2A2A31);
+        int background = active ? 0xFF4A6B34 : (hovered ? 0xFF3A3A44 : 0xFF2A2A31);
         fill(pose, screenX, screenY, screenX + TOGGLE_W, screenY + TOGGLE_H, background);
         Component label = new TranslatableComponent(prefix
                 ? "gui.gearsealerpro.prefix" : "gui.gearsealerpro.suffix");
         this.font.draw(pose, label, screenX + (TOGGLE_W - this.font.width(label)) / 2F,
-                screenY + 3, lockedToTarget && !active ? 0xFF6A6A6A : 0xFFEFEFEF);
+                screenY + 3, active ? 0xFFEFEFEF : 0xFF9A9AA4);
     }
 
     private void drawLists(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
@@ -248,18 +261,15 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
     }
 
     private boolean isSelected(MsgSyncOptions.OptionEntry entry) {
-        if (!this.selection.hasOption()) {
-            return false;
-        }
-        return this.selection.selectedOption().id().equals(entry.id().toString())
-                && this.selection.selectedOption().prefix() == (entry.type() == 0);
+        return this.selection.hasOption()
+                && this.selection.selectedOption().id().equals(entry.id().toString());
     }
 
     private List<MsgSyncOptions.OptionEntry> visibleOptions(MsgSyncOptions data) {
         boolean prefix = this.selection.effectivePrefix();
         List<MsgSyncOptions.OptionEntry> result = new ArrayList<>();
         for (MsgSyncOptions.OptionEntry entry : data.options) {
-            if ((entry.type() == 0) == prefix) {
+            if (entry.allows(prefix)) {
                 result.add(entry);
             }
         }
@@ -292,19 +302,21 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
             return false;
         }
 
-        int toggleY = this.topPos + TOGGLE_Y;
-        if (mouseY >= toggleY && mouseY < toggleY + TOGGLE_H) {
-            int toggleX = this.leftPos + LEFT_LIST_X;
-            if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
-                this.selection.setAddPrefix(true);
-                this.selection.resetOptionScroll();
-                return true;
-            }
-            toggleX += TOGGLE_W + 4;
-            if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
-                this.selection.setAddPrefix(false);
-                this.selection.resetOptionScroll();
-                return true;
+        if (this.selection.isAddMode()) {
+            int toggleY = this.topPos + TOGGLE_Y;
+            if (mouseY >= toggleY && mouseY < toggleY + TOGGLE_H) {
+                int toggleX = this.leftPos + TOGGLE_X;
+                if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
+                    this.selection.setAddPrefix(true);
+                    this.selection.resetOptionScroll();
+                    return true;
+                }
+                toggleX += TOGGLE_W + TOGGLE_GAP;
+                if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
+                    this.selection.setAddPrefix(false);
+                    this.selection.resetOptionScroll();
+                    return true;
+                }
             }
         }
 
@@ -315,8 +327,7 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
             List<MsgSyncOptions.OptionEntry> options = visibleOptions(data);
             int index = this.selection.optionScroll() + row;
             if (index >= 0 && index < options.size()) {
-                MsgSyncOptions.OptionEntry entry = options.get(index);
-                this.selection.selectOption(new SealOptionKey(entry.id().toString(), entry.type() == 0));
+                this.selection.selectOption(new SealOptionKey(options.get(index).id().toString()));
                 return true;
             }
             return false;
@@ -329,9 +340,11 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
             List<Row> rows = targetRows(data);
             if (index >= 0 && index < rows.size()) {
                 boolean prefix = index == SelectionModel.ADD_ROW
-                        || data.targets.get(index - 1).type() == 0;
+                        || data.targets.get(index - 1).prefix();
                 this.selection.selectTarget(index, prefix);
-                this.selection.clearOption();
+                if (this.selection.hasOption() && !optionStillAllows(data, prefix)) {
+                    this.selection.clearOption();
+                }
                 this.selection.resetOptionScroll();
                 return true;
             }
@@ -346,12 +359,21 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         return false;
     }
 
+    private boolean optionStillAllows(MsgSyncOptions data, boolean prefix) {
+        String id = this.selection.selectedOption().id();
+        for (MsgSyncOptions.OptionEntry entry : data.options) {
+            if (entry.id().toString().equals(id) && entry.allows(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void sendSeal(MsgSyncOptions data) {
         SealRequest request = this.selection.toRequest();
         MsgSyncOptions.OptionEntry chosen = null;
         for (MsgSyncOptions.OptionEntry entry : data.options) {
-            if (entry.id().toString().equals(request.option().id())
-                    && (entry.type() == 0) == request.option().prefix()) {
+            if (entry.id().toString().equals(request.option().id()) && entry.allows(request.prefix())) {
                 chosen = entry;
                 break;
             }
@@ -359,7 +381,7 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         if (chosen == null) {
             return;
         }
-        VaultGearModifier.AffixType type = request.option().prefix()
+        VaultGearModifier.AffixType type = request.prefix()
                 ? VaultGearModifier.AffixType.PREFIX
                 : VaultGearModifier.AffixType.SUFFIX;
         NetworkHandler.sendToServer(new MsgCommitSeal(chosen.id(), type, request.targetIndex()));

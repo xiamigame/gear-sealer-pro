@@ -14,10 +14,19 @@ import net.minecraftforge.network.NetworkEvent;
 /** Server -> client: the currently selectable sealed modifiers, replacement targets and costs. */
 public class MsgSyncOptions {
 
-    public record OptionEntry(ResourceLocation id, byte type, Component display) {
+    /** Affix sides a sealed modifier can occupy. */
+    public static final byte SIDE_PREFIX = 1;
+    public static final byte SIDE_SUFFIX = 2;
+
+    /** @param sides bit mask of {@link #SIDE_PREFIX} / {@link #SIDE_SUFFIX} */
+    public record OptionEntry(ResourceLocation id, byte sides, Component display) {
+
+        public boolean allows(boolean prefix) {
+            return (this.sides & (prefix ? SIDE_PREFIX : SIDE_SUFFIX)) != 0;
+        }
     }
 
-    public record TargetEntry(byte type, Component display) {
+    public record TargetEntry(boolean prefix, Component display) {
     }
 
     public boolean hasGear;
@@ -49,13 +58,13 @@ public class MsgSyncOptions {
         buf.writeVarInt(msg.options.size());
         for (OptionEntry entry : msg.options) {
             buf.writeResourceLocation(entry.id());
-            buf.writeByte(entry.type());
+            buf.writeByte(entry.sides());
             buf.writeUtf(Component.Serializer.toJson(entry.display()));
         }
 
         buf.writeVarInt(msg.targets.size());
         for (TargetEntry entry : msg.targets) {
-            buf.writeByte(entry.type());
+            buf.writeBoolean(entry.prefix());
             buf.writeUtf(Component.Serializer.toJson(entry.display()));
         }
     }
@@ -75,16 +84,16 @@ public class MsgSyncOptions {
         int optionCount = buf.readVarInt();
         for (int i = 0; i < optionCount; i++) {
             ResourceLocation id = buf.readResourceLocation();
-            byte type = buf.readByte();
+            byte sides = buf.readByte();
             Component display = Component.Serializer.fromJson(buf.readUtf());
-            msg.options.add(new OptionEntry(id, type, display));
+            msg.options.add(new OptionEntry(id, sides, display));
         }
 
         int targetCount = buf.readVarInt();
         for (int i = 0; i < targetCount; i++) {
-            byte type = buf.readByte();
+            boolean prefix = buf.readBoolean();
             Component display = Component.Serializer.fromJson(buf.readUtf());
-            msg.targets.add(new TargetEntry(type, display));
+            msg.targets.add(new TargetEntry(prefix, display));
         }
         return msg;
     }

@@ -19,11 +19,11 @@ import iskallia.vault.item.gear.IVaultUsesItem;
 import iskallia.vault.util.CoinDefinition;
 import iskallia.vault.util.InventoryUtil;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
@@ -48,9 +48,13 @@ public final class SealerLogic {
 
     private static final long DISPLAY_SEED = 0x5EEDL;
 
-    public record Option(ResourceLocation id, VaultGearModifier.AffixType type, Component display,
+    public record Option(ResourceLocation id, boolean prefixAllowed, boolean suffixAllowed, Component display,
                          VaultGearTierConfig.ModifierTierGroup group,
                          List<VaultGearTierConfig.ModifierTier<?>> tiers) {
+
+        public boolean allows(VaultGearModifier.AffixType type) {
+            return type == VaultGearModifier.AffixType.PREFIX ? this.prefixAllowed : this.suffixAllowed;
+        }
 
         public VaultGearModifier<?> roll(Random random) {
             int total = 0;
@@ -84,39 +88,38 @@ public final class SealerLogic {
     }
 
     /**
-     * All sealed modifiers this piece of gear can receive, in both affix slots when the
-     * modifier comes from the corrupted-implicit pool.
+     * All sealed modifiers this piece of gear can receive. One entry per modifier id; the
+     * entry records which affix sides it may occupy (the corrupted-implicit pool allows both,
+     * the generic fallback pool pins one side).
      */
     public static List<Option> options(ItemStack gear) {
-        List<Option> result = new ArrayList<>();
         VaultGearTierConfig config = VaultGearTierConfig.getConfig(gear).orElse(null);
         if (config == null) {
-            return result;
+            return List.of();
         }
         VaultGearData data = VaultGearData.read(gear);
         int level = data.getItemLevel();
-        Set<ResourceLocation> seen = new HashSet<>();
+        Map<ResourceLocation, Option> byId = new LinkedHashMap<>();
 
         VaultGearTierConfig.AttributeGroup corrupted =
                 config.getModifierGroup(VaultGearTierConfig.ModifierAffixTagGroup.CORRUPTED_IMPLICIT);
         if (corrupted != null) {
             for (VaultGearTierConfig.ModifierTierGroup group : corrupted) {
-                if (group == null || group.getIdentifier() == null || !seen.add(group.getIdentifier())) {
-                    continue;
-                }
-                if (!ProficiencyStep.isModifierAllowed(gear, group.getIdentifier())) {
+                if (group == null || group.getIdentifier() == null
+                        || byId.containsKey(group.getIdentifier())
+                        || !ProficiencyStep.isModifierAllowed(gear, group.getIdentifier())) {
                     continue;
                 }
                 List<VaultGearTierConfig.ModifierTier<?>> tiers = group.getModifiersForLevel(level);
                 if (tiers.isEmpty()) {
                     continue;
                 }
-                addOption(result, group, tiers, VaultGearModifier.AffixType.PREFIX, gear, data);
-                addOption(result, group, tiers, VaultGearModifier.AffixType.SUFFIX, gear, data);
+                byId.put(group.getIdentifier(), new Option(group.getIdentifier(), true, true,
+                        display(group, tiers, VaultGearModifier.AffixType.PREFIX, gear, data), group, tiers));
             }
         }
 
-        if (result.isEmpty()) {
+        if (byId.isEmpty()) {
             for (Tuple<VaultGearTierConfig.ModifierAffixTagGroup, VaultGearTierConfig.ModifierTierGroup> tuple
                     : config.getGenericGroupsFulfilling(group -> !group.getTags().contains("noLegendary"))) {
                 VaultGearTierConfig.ModifierAffixTagGroup affixGroup = tuple.getA();
@@ -125,38 +128,36 @@ public final class SealerLogic {
                     continue;
                 }
                 VaultGearModifier.AffixType type = affixGroup.getTargetAffixType();
-                if (type == null || group.getIdentifier() == null) {
-                    continue;
-                }
-                if (!ProficiencyStep.isModifierAllowed(gear, group.getIdentifier())) {
+                if (type == null || group.getIdentifier() == null
+                        || byId.containsKey(group.getIdentifier())
+                        || !ProficiencyStep.isModifierAllowed(gear, group.getIdentifier())) {
                     continue;
                 }
                 List<VaultGearTierConfig.ModifierTier<?>> tiers = group.getModifiersForLevel(level);
                 if (tiers.isEmpty()) {
                     continue;
                 }
-                addOption(result, group, tiers, type, gear, data);
+                boolean prefix = type == VaultGearModifier.AffixType.PREFIX;
+                byId.put(group.getIdentifier(), new Option(group.getIdentifier(), prefix, !prefix,
+                        display(group, tiers, type, gear, data), group, tiers));
             }
         }
-        return result;
+        return new ArrayList<>(byId.values());
     }
 
-    private static void addOption(List<Option> out, VaultGearTierConfig.ModifierTierGroup group,
-                                  List<VaultGearTierConfig.ModifierTier<?>> tiers,
-                                  VaultGearModifier.AffixType type, ItemStack gear, VaultGearData data) {
-        out.add(new Option(group.getIdentifier(), type, display(group, tiers, type, gear, data), group, tiers));
-    }
-
+    /**
+     * Builds the list label. {@code displayDetail = true} appends the modifier's config range
+     * (e.g. {@code (1 - 3)}), which is what a sealed modifier can roll at this item level.
+     */
     private static Component display(VaultGearTierConfig.ModifierTierGroup group,
                                      List<VaultGearTierConfig.ModifierTier<?>> tiers,
                                      VaultGearModifier.AffixType type, ItemStack gear, VaultGearData data) {
         try {
             Random random = new Random(DISPLAY_SEED);
-            int index = random.nextInt(tiers.size());
-            VaultGearModifier<?> sample = new VaultGearTierConfig.ModifierOutcome<>(tiers.get(index), group)
+            VaultGearModifier<?> sample = new VaultGearTierConfig.ModifierOutcome<>(tiers.get(0), group)
                     .makeModifier(random);
             sample.addCategory(VaultGearModifier.AffixCategory.CORRUPTED);
-            Optional<MutableComponent> rendered = sample.getDisplay(data, type, gear, false);
+            Optional<MutableComponent> rendered = sample.getDisplay(data, type, gear, true);
             if (rendered.isPresent()) {
                 return rendered.get();
             }
@@ -244,10 +245,13 @@ public final class SealerLogic {
         msg.havePainite = menu.getPainiteSlot().getItem().getCount();
         msg.haveFocus = menu.getFocusSlot().getItem().getCount();
         for (Option option : options(gear)) {
-            msg.options.add(new MsgSyncOptions.OptionEntry(option.id(), (byte) option.type().ordinal(), option.display()));
+            byte sides = (byte) ((option.prefixAllowed() ? MsgSyncOptions.SIDE_PREFIX : 0)
+                    | (option.suffixAllowed() ? MsgSyncOptions.SIDE_SUFFIX : 0));
+            msg.options.add(new MsgSyncOptions.OptionEntry(option.id(), sides, option.display()));
         }
         for (Target target : targets(gear, data)) {
-            msg.targets.add(new MsgSyncOptions.TargetEntry((byte) target.type().ordinal(), target.display()));
+            msg.targets.add(new MsgSyncOptions.TargetEntry(
+                    target.type() == VaultGearModifier.AffixType.PREFIX, target.display()));
         }
         msg.canSeal = canSeal(menu, menu.getPlayer());
         return msg;
@@ -279,7 +283,7 @@ public final class SealerLogic {
         }
 
         Option option = options(gear).stream()
-                .filter(candidate -> candidate.id().equals(optionId) && candidate.type() == affixType)
+                .filter(candidate -> candidate.id().equals(optionId) && candidate.allows(affixType))
                 .findFirst().orElse(null);
         if (option == null) {
             return false;

@@ -49,39 +49,39 @@ public class GearSealerProMenu extends OverSizedSlotContainer {
     private void initSlots(Inventory playerInventory) {
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                this.addSlot(new TabSlot(playerInventory, column + row * 9 + 9, 8 + column * 18, 206 + row * 18));
+                this.addSlot(new TabSlot(playerInventory, column + row * 9 + 9, 39 + column * 18, 206 + row * 18));
             }
         }
         for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
-            this.addSlot(new TabSlot(playerInventory, hotbarSlot, 8 + hotbarSlot * 18, 264));
+            this.addSlot(new TabSlot(playerInventory, hotbarSlot, 39 + hotbarSlot * 18, 264));
         }
 
         if (this.tileEntity == null) {
             // Keep slot indices stable even if the block entity vanished client-side.
-            this.goldSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 13, 26));
-            this.focusSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 31, 35));
-            this.painiteSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 13, 44));
-            this.gearInputSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 82, 35));
-            this.outputSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 142, 35));
+            this.goldSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 31, 26));
+            this.focusSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 49, 35));
+            this.painiteSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 31, 44));
+            this.gearInputSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 102, 35));
+            this.outputSlot = this.addSlot(new Slot(new net.minecraft.world.SimpleContainer(1), 0, 176, 35));
             return;
         }
 
         Container invContainer = this.tileEntity.getInventory();
-        this.goldSlot = this.addSlot(new OverSizedTabSlot(invContainer, 0, 13, 26)
+        this.goldSlot = this.addSlot(new OverSizedTabSlot(invContainer, 0, 31, 26)
                 .setFilter(stack -> stack.is(ModBlocks.VAULT_GOLD)));
-        this.focusSlot = this.addSlot(new OverSizedTabSlot(invContainer, 1, 31, 35)
+        this.focusSlot = this.addSlot(new OverSizedTabSlot(invContainer, 1, 49, 35)
                 .setFilter(stack -> stack.is(ModItems.VORPAL_FOCUS)));
-        this.painiteSlot = this.addSlot(new OverSizedTabSlot(invContainer, 2, 13, 44)
+        this.painiteSlot = this.addSlot(new OverSizedTabSlot(invContainer, 2, 31, 44)
                 .setFilter(stack -> stack.is(ModItems.PAINITE_GEM)));
 
         Container inputContainer = this.tileEntity.getGearInput();
-        this.gearInputSlot = this.addSlot(new TabSlot(inputContainer, 0, 82, 35) {
+        this.gearInputSlot = this.addSlot(new TabSlot(inputContainer, 0, 102, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return GearSealerProBlockEntity.isValidGear(stack);
             }
         });
-        this.outputSlot = this.addSlot(new RecipeOutputSlot(this.tileEntity.getOutput(), 0, 142, 35));
+        this.outputSlot = this.addSlot(new RecipeOutputSlot(this.tileEntity.getOutput(), 0, 176, 35));
     }
 
     public Slot getGoldSlot() {

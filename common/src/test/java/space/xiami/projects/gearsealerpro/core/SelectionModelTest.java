@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import space.xiami.projects.gearsealerpro.api.SealOptionKey;
+import space.xiami.projects.gearsealerpro.api.SealRequest;
 
 class SelectionModelTest {
 
@@ -47,7 +48,7 @@ class SelectionModelTest {
     @Test
     void optionSelectionIsRememberedAndClearable() {
         SelectionModel model = new SelectionModel();
-        SealOptionKey key = new SealOptionKey("the_vault:ability_power", true);
+        SealOptionKey key = new SealOptionKey("the_vault:ability_power");
 
         model.selectOption(key);
         assertTrue(model.hasOption());
@@ -86,5 +87,32 @@ class SelectionModelTest {
     void requestWithoutSelectionFails() {
         SelectionModel model = new SelectionModel();
         assertThrows(IllegalStateException.class, model::toRequest);
+    }
+
+    @Test
+    void requestCarriesTheEffectiveSideAndTarget() {
+        SelectionModel model = new SelectionModel();
+        model.selectOption(new SealOptionKey("the_vault:ability_power"));
+        model.selectTarget(2, false);
+
+        SealRequest request = model.toRequest();
+
+        assertEquals("the_vault:ability_power", request.option().id());
+        assertFalse(request.prefix());
+        assertEquals(1, request.targetIndex());
+        assertFalse(request.addsAffix());
+    }
+
+    @Test
+    void addModeRequestUsesTheToggleSide() {
+        SelectionModel model = new SelectionModel();
+        model.setAddPrefix(false);
+        model.selectOption(new SealOptionKey("the_vault:thorns"));
+
+        SealRequest request = model.toRequest();
+
+        assertTrue(request.addsAffix());
+        assertFalse(request.prefix());
+        assertEquals(SealRequest.ADD_NEW_AFFIX, request.targetIndex());
     }
 }

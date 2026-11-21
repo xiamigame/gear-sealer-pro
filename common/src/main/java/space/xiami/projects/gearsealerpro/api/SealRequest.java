@@ -3,12 +3,13 @@ package space.xiami.projects.gearsealerpro.api;
 import java.util.Objects;
 
 /**
- * One sealing request: which sealed modifier to apply and where.
+ * One sealing request: which sealed modifier to apply, on which affix side, and where.
  *
  * @param option      the selected sealed modifier
+ * @param prefix      whether the modifier lands in a prefix slot (false = suffix)
  * @param targetIndex target position in the server-side list, or {@link #ADD_NEW_AFFIX}
  */
-public record SealRequest(SealOptionKey option, int targetIndex) {
+public record SealRequest(SealOptionKey option, boolean prefix, int targetIndex) {
 
     public static final int ADD_NEW_AFFIX = -1;
 

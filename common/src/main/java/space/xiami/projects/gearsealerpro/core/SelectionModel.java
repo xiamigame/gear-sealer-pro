@@ -79,7 +79,7 @@ public final class SelectionModel {
         if (this.selectedOption == null) {
             throw new IllegalStateException("no sealed modifier selected");
         }
-        return new SealRequest(this.selectedOption, targetIndex());
+        return new SealRequest(this.selectedOption, effectivePrefix(), targetIndex());
     }
 
     public int optionScroll() {
