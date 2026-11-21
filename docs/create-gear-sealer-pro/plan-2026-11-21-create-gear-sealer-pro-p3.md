@@ -123,3 +123,31 @@ gear-sealer-pro/
    - B. GitHub-hosted + 仓库内提交一份「仅签名」的 API stub 模块（不含实现，约 15 个方法）：CI 能编译，但验证的是桩不是真 the_vault；
    - C. GitHub-hosted 只跑 `common` 单测；jar 本地构建后手动上传 Release（CI 不产出 jar）。
 3. **远端仓库创建方式**：你已在 GitHub 建好空仓库 `xiamigame/gear-sealer-pro` 并告诉我；或给我一个有 `repo` 权限的 PAT 由我创建（token 不入库、不写日志）。SSH 推送已可用。
+
+### A3 · 2026-11-21 · 提出人：user
+
+- **类型**：执行记录（P3：工程形态重构 + 发布前置）
+- **关联**：L2（P3）
+- **变更**：
+  - 重构为 `common` + `adapter/1_18_2`；`common` 仅含 `api`（`SealOptionKey`/`SealTargetKey`/`SealRequest`）
+    与 `core`（`SelectionModel`/`PanelLayout`/`CostView`）及 JUnit5 单测；界面改用这些纯 JVM 类型。
+  - `adapter/1_18_2` 承接原 16 个类与全部资源，`implementation project(':common')`，
+    `jar { from(common output) }` 合并后 `reobfJar`，产物仍为单 jar。
+  - 元数据：`mod_license=MIT`、`mod_authors=xiami`（`mod_id`/`mod_name`/包名/注册名/语言键不变）。
+  - 新增 `.github/workflows/release.yml`（self-hosted runner，tag `v*` → 构建 → Release）。
+  - 远端 `git@github.com:xiamigame/gear-sealer-pro.git`，推送 `main` 与 annotated tag `v0.1.0-1.18.2`。
+- **证据**：
+  - `.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon` → `BUILD SUCCESSFUL`。
+  - 产物 `adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.1.0.jar`（66 KB，60 条目）：
+    `api/`+`core/` 类 8 个、adapter 类 39 个、`iskallia/*` 类 0 个。
+  - `common/src` 中 `net.minecraft|net.minecraftforge|com.mojang|org.lwjgl` 引用数 = 0。
+  - `mods.toml` 展开：`license="MIT"`、`authors="xiami"`、`modId="gearsealerpro"`、`version="0.1.0"`、
+    依赖 `forge [40,)` / `minecraft [1.18.2,1.19)` / `the_vault [3.21.6,)`。
+  - 远端：`refs/heads/main` = `0dd14f3`；`refs/tags/v0.1.0-1.18.2` 为 annotated tag（指向同一提交）。
+- **未做 / 待用户**：
+  - CI 尚未真正执行：需要你在本机注册 self-hosted runner（标签 `self-hosted,windows,x64`），
+    并在仓库设置里加变量 `THE_VAULT_JAR` 指向 the_vault jar 路径；在此之前 tag 触发的 job 会排队。
+  - 游戏内验收仍由你手动完成。
+- **影响**：仓库结构变更；产物名、mod id、包名、方块注册名、语言键、配方不变。
+- **生效**：2026-11-21
+- **状态**：ACTIVE

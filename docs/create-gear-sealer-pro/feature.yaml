@@ -18,10 +18,12 @@ git:
   branch: main
   base: main
   worktree: null
-  upstream: null
+  upstream: origin
+  remote: git@github.com:xiamigame/gear-sealer-pro.git
   release_line: null
   version: 0.1.0
-  tags: []
+  tags:
+    - v0.1.0-1.18.2
 
 change:
   source_ref: null            # 全新仓库，无上游
