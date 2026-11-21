@@ -163,3 +163,24 @@ gear-sealer-pro/
 - **注意**：已推送的 tag `v0.1.0-1.18.2` 指向 `0dd14f3`（该提交的 workflow 还没有这一步校验），
   按"不复用/不改写已发布 tag"的规则**没有**移动 tag；校验从下一个 tag 起生效。
 - **状态**：ACTIVE
+
+### A5 · 2026-11-21 · 提出人：user
+
+- **类型**：热修（patch，0.1.0 → 0.1.1）
+- **关联**：A1/A3（`mods.toml` 依赖声明）
+- **问题**：整合包启动崩溃 `crash-2026-11-21_18.41.47-fml.txt`：
+  `Mod gearsealerpro requires the_vault 3.21.6 or above / Currently, the_vault is 1.18.2-3.21.6.6884`。
+- **根因**：The Vault 的 mod 版本号是 `<mc>-<mod version>`（`1.18.2-3.21.6.6884`），
+  Forge 用 Maven 版本语义比较，把它解析为主版本 1，因此 `[3.21.6,)` 永远不满足。
+- **变更**：
+  - `adapter/1_18_2/src/main/resources/META-INF/mods.toml`：`the_vault` 的
+    `versionRange` 由 `[3.21.6,)` 改为 `[1.18.2-3.21.6,)`，并加注释说明前缀原因。
+  - `mod_version` 0.1.0 → 0.1.1；tag `v0.1.1-1.18.2`。
+- **证据**（用 Maven `VersionRange` 实测，与 Forge 同一套实现）：
+  - `[3.21.6,)` → 对 `1.18.2-3.21.6.6884` 为 **false**；
+  - `[1.18.2-3.21.6,)` → true；对 `1.18.2-3.21.6.7000`、`1.18.2-3.22.0.1` 也为 true。
+  - 构建后 jar 内 `mods.toml` 展开：`version="0.1.1"`、`the_vault` `versionRange="[1.18.2-3.21.6,)"`。
+- **未验证**：游戏内启动（需你替换 jar 后实测）。
+- **影响**：仅加载期依赖检查；产物名 `gearsealerpro-1.18.2-0.1.1.jar`。
+- **生效**：2026-11-21
+- **状态**：ACTIVE
