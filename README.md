@@ -40,8 +40,15 @@ MC 1.18.2 | Forge 40.3.11 | ForgeGradle [6.0,6.2) | Gradle 8.8 (wrapper) | JDK 1
 .\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon
 ```
 
-产物：`adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.1.0.jar`，放进整合包 `mods/` 即可。
+产物：`adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.2.0.jar`，放进整合包 `mods/` 即可。
 构建只使用官方 Gradle 发行版、官方 Forge maven 与官方插件门户，不使用镜像或离线缓存。
+
+## 多人联机
+
+服务端只下发「词条 id + 可占用的侧别」与材料/成本状态，**列表文案由客户端自己拼**：
+The Vault 的 `getDisplay` 是 `@OnlyIn(CLIENT)`，专用服务器上会被剥掉，所以服务端不能碰它。
+因此专用服务器、局域网、单人三种环境行为一致，客户端必须有同一个 mod（`mods.toml` 默认
+`MATCH_VERSION`）。
 
 ## 获得方式
 

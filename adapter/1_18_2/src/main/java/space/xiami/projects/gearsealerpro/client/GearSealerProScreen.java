@@ -166,6 +166,7 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
 
     private void drawLists(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
         List<MsgSyncOptions.OptionEntry> options = visibleOptions(data);
+        ItemStack gear = this.menu.getGearInputSlot().getItem();
         this.hoveredOption = null;
         this.hoveredTarget = null;
 
@@ -184,15 +185,16 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
             } else if (hovered) {
                 fill(pose, leftX, rowY, leftX + LEFT_LIST_W, rowY + LIST_ROW_HEIGHT, 0x33FFFFFF);
             }
+            Component label = ClientSealData.optionLabel(gear, entry.id());
             if (hovered) {
-                this.hoveredOption = entry.display();
+                this.hoveredOption = label;
             }
-            this.font.draw(pose, fitText(entry.display().getString(), LEFT_LIST_W - 6),
+            this.font.draw(pose, fitText(label.getString(), LEFT_LIST_W - 6),
                     leftX + 3, rowY + 5, 0xFFEFEFEF);
         }
 
         int rightX = this.leftPos + RIGHT_LIST_X;
-        List<Row> rows = targetRows(data);
+        List<Row> rows = targetRows(data, gear);
         for (int row = 0; row < LIST_ROWS; row++) {
             int index = this.selection.targetScroll() + row;
             if (index >= rows.size()) {
@@ -279,11 +281,16 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
     private record Row(Component label, boolean addEntry) {
     }
 
-    private List<Row> targetRows(MsgSyncOptions data) {
+    private List<Row> targetRows(MsgSyncOptions data, ItemStack gear) {
         List<Row> rows = new ArrayList<>();
         rows.add(new Row(new TranslatableComponent("gui.gearsealerpro.add_affix"), true));
-        for (MsgSyncOptions.TargetEntry entry : data.targets) {
-            rows.add(new Row(entry.display(), false));
+        List<Component> labels = ClientSealData.targetLabels(gear);
+        for (int i = 0; i < data.targets.size(); i++) {
+            boolean prefix = data.targets.get(i).prefix();
+            Component label = i < labels.size()
+                    ? labels.get(i)
+                    : new TextComponent((prefix ? "prefix" : "suffix") + " #" + (i + 1));
+            rows.add(new Row(label, false));
         }
         return rows;
     }
@@ -337,7 +344,7 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         if (PanelLayout.inside(mouseX, mouseY, rightX, listY, RIGHT_LIST_W, LIST_HEIGHT)) {
             int row = (int) ((mouseY - listY) / LIST_ROW_HEIGHT);
             int index = this.selection.targetScroll() + row;
-            List<Row> rows = targetRows(data);
+            List<Row> rows = targetRows(data, this.menu.getGearInputSlot().getItem());
             if (index >= 0 && index < rows.size()) {
                 boolean prefix = index == SelectionModel.ADD_ROW
                         || data.targets.get(index - 1).prefix();
@@ -400,7 +407,8 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
             return true;
         }
         if (PanelLayout.inside(mouseX, mouseY, rightX, listY, RIGHT_LIST_W, LIST_HEIGHT)) {
-            this.selection.scrollTargets(step, targetRows(data).size());
+            this.selection.scrollTargets(step,
+                    targetRows(data, this.menu.getGearInputSlot().getItem()).size());
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);

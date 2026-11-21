@@ -235,3 +235,24 @@ gear-sealer-pro/
 - **未验证**：没有真实专用服务器环境实测（无服务器可起），结论基于 Forge 的 DistCleaner 语义与字节码。
 - **遗留**：专用服务器上的可读文案仍需"服务端发 id、客户端拼显示"的改造（约 1–2 小时 + 服务器实测）。
 - **状态**：ACTIVE
+
+### A8 · 2026-11-21 · 提出人：user（“按多人改法执行”）
+
+- **类型**：修订（架构，0.1.3 → 0.2.0；网络协议 1 → 2）
+- **关联**：A7 遗留项
+- **变更**（服务端不再生成任何显示文本）：
+  - `MsgSyncOptions`：`OptionEntry(id, sides)`、`TargetEntry(prefix)`，**不再携带 Component**；
+    `TargetEntry` 只留前后缀标记，文案与顺序由客户端从装备栈还原。
+  - `SealerLogic`：`Option` 去掉 `display` 字段；删除 `display(...)` 方法；`targets()` 只返回
+    `(type, modifier)`；`buildSync` 只发 id/侧别/标记。服务端不再调用任何 `@OnlyIn(CLIENT)` API。
+  - 新增客户端 `ClientSealData.optionLabel/targetLabels`：用装备栈 + `VaultGearTierConfig`
+    构造样例词条并 `getDisplay(..., true)`（带区间）；配置缺失时退回 modifier id。
+    按 (快照身份 hash, 装备 NBT) 缓存，不逐帧重算。
+  - `NetworkHandler` 协议版本 `1` → `2`（包结构与旧版不兼容，客户端/服务端必须同版本）。
+- **证据**：
+  - `.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon` → `BUILD SUCCESSFUL`。
+  - `SealerLogic.java` 中 `getDisplay` 出现次数 = 0；`MsgSyncOptions.java` 中 `Component` 出现次数 = 0。
+  - 产物 `adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.2.0.jar`。
+- **未验证**：没有真实专用服务器实测；断言依据是 Forge DistCleaner 语义与"服务端零 client API"的静态核对。
+- **影响**：旧版客户端与新版服务端不能互连（协议版本不同会被 Forge 拒收）；单人无感。
+- **状态**：ACTIVE

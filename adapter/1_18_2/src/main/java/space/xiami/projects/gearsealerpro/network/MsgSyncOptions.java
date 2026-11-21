@@ -1,17 +1,23 @@
 package space.xiami.projects.gearsealerpro.network;
 
-import space.xiami.projects.gearsealerpro.client.ClientSealData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import space.xiami.projects.gearsealerpro.client.ClientSealData;
 
-/** Server -> client: the currently selectable sealed modifiers, replacement targets and costs. */
+/**
+ * Server -> client: which sealed modifiers are available (id + allowed affix sides), which
+ * affixes can be replaced, and the material state.
+ *
+ * <p>No display text is sent: The Vault's display helpers are client-only, so the client
+ * builds the labels itself from the same gear stack it already has. This keeps the dedicated
+ * server free of client classes.</p>
+ */
 public class MsgSyncOptions {
 
     /** Affix sides a sealed modifier can occupy. */
@@ -19,14 +25,15 @@ public class MsgSyncOptions {
     public static final byte SIDE_SUFFIX = 2;
 
     /** @param sides bit mask of {@link #SIDE_PREFIX} / {@link #SIDE_SUFFIX} */
-    public record OptionEntry(ResourceLocation id, byte sides, Component display) {
+    public record OptionEntry(ResourceLocation id, byte sides) {
 
         public boolean allows(boolean prefix) {
             return (this.sides & (prefix ? SIDE_PREFIX : SIDE_SUFFIX)) != 0;
         }
     }
 
-    public record TargetEntry(boolean prefix, Component display) {
+    /** One replaceable affix, in prefix-then-suffix order. */
+    public record TargetEntry(boolean prefix) {
     }
 
     public boolean hasGear;
@@ -59,13 +66,11 @@ public class MsgSyncOptions {
         for (OptionEntry entry : msg.options) {
             buf.writeResourceLocation(entry.id());
             buf.writeByte(entry.sides());
-            buf.writeUtf(Component.Serializer.toJson(entry.display()));
         }
 
         buf.writeVarInt(msg.targets.size());
         for (TargetEntry entry : msg.targets) {
             buf.writeBoolean(entry.prefix());
-            buf.writeUtf(Component.Serializer.toJson(entry.display()));
         }
     }
 
@@ -83,17 +88,12 @@ public class MsgSyncOptions {
 
         int optionCount = buf.readVarInt();
         for (int i = 0; i < optionCount; i++) {
-            ResourceLocation id = buf.readResourceLocation();
-            byte sides = buf.readByte();
-            Component display = Component.Serializer.fromJson(buf.readUtf());
-            msg.options.add(new OptionEntry(id, sides, display));
+            msg.options.add(new OptionEntry(buf.readResourceLocation(), buf.readByte()));
         }
 
         int targetCount = buf.readVarInt();
         for (int i = 0; i < targetCount; i++) {
-            boolean prefix = buf.readBoolean();
-            Component display = Component.Serializer.fromJson(buf.readUtf());
-            msg.targets.add(new TargetEntry(prefix, display));
+            msg.targets.add(new TargetEntry(buf.readBoolean()));
         }
         return msg;
     }

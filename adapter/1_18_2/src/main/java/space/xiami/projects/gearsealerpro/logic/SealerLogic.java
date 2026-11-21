@@ -1,15 +1,13 @@
 package space.xiami.projects.gearsealerpro.logic;
 
-import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
-import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
 import iskallia.vault.config.gear.VaultGearCraftingConfig.ProficiencyStep;
 import iskallia.vault.config.gear.VaultGearTierConfig;
 import iskallia.vault.gear.GearRollHelper;
+import iskallia.vault.gear.VaultGearModifierHelper;
 import iskallia.vault.gear.attribute.VaultGearModifier;
 import iskallia.vault.gear.crafting.VaultGearCraftingHelper;
 import iskallia.vault.gear.data.VaultGearData;
 import iskallia.vault.gear.modification.VaultSealerCost;
-import iskallia.vault.gear.VaultGearModifierHelper;
 import iskallia.vault.init.ModBlocks;
 import iskallia.vault.init.ModGearAttributes;
 import iskallia.vault.init.ModGearModifications;
@@ -24,17 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
 
 /**
  * The sealing logic of the Gear Sealer Pro.
@@ -43,12 +38,14 @@ import net.minecraft.world.item.ItemStack;
  * {@code CorruptGearModification} / {@code VaultSealerRequestModificationMessage}; the only
  * behavioural difference is that the sealed modifier and the replaced affix are chosen by
  * the player instead of being rolled.</p>
+ *
+ * <p>Everything here runs on the logical server, so it must not touch client-only code. The
+ * option list is therefore sent as identifiers plus side flags; the client renders the labels
+ * itself (see {@code ClientSealData}).</p>
  */
 public final class SealerLogic {
 
-    private static final long DISPLAY_SEED = 0x5EEDL;
-
-    public record Option(ResourceLocation id, boolean prefixAllowed, boolean suffixAllowed, Component display,
+    public record Option(ResourceLocation id, boolean prefixAllowed, boolean suffixAllowed,
                          VaultGearTierConfig.ModifierTierGroup group,
                          List<VaultGearTierConfig.ModifierTier<?>> tiers) {
 
@@ -74,7 +71,7 @@ public final class SealerLogic {
         }
     }
 
-    public record Target(VaultGearModifier.AffixType type, VaultGearModifier<?> modifier, Component display) {
+    public record Target(VaultGearModifier.AffixType type, VaultGearModifier<?> modifier) {
     }
 
     private SealerLogic() {
@@ -114,8 +111,7 @@ public final class SealerLogic {
                 if (tiers.isEmpty()) {
                     continue;
                 }
-                byId.put(group.getIdentifier(), new Option(group.getIdentifier(), true, true,
-                        display(group, tiers, VaultGearModifier.AffixType.PREFIX, gear, data), group, tiers));
+                byId.put(group.getIdentifier(), new Option(group.getIdentifier(), true, true, group, tiers));
             }
         }
 
@@ -138,55 +134,21 @@ public final class SealerLogic {
                     continue;
                 }
                 boolean prefix = type == VaultGearModifier.AffixType.PREFIX;
-                byId.put(group.getIdentifier(), new Option(group.getIdentifier(), prefix, !prefix,
-                        display(group, tiers, type, gear, data), group, tiers));
+                byId.put(group.getIdentifier(), new Option(group.getIdentifier(), prefix, !prefix, group, tiers));
             }
         }
         return new ArrayList<>(byId.values());
     }
 
-    /**
-     * Builds the list label. {@code displayDetail = true} appends the modifier's config range
-     * (e.g. {@code (1 - 3)}), which is what a sealed modifier can roll at this item level.
-     */
-    private static Component display(VaultGearTierConfig.ModifierTierGroup group,
-                                     List<VaultGearTierConfig.ModifierTier<?>> tiers,
-                                     VaultGearModifier.AffixType type, ItemStack gear, VaultGearData data) {
-        try {
-            Random random = new Random(DISPLAY_SEED);
-            VaultGearModifier<?> sample = new VaultGearTierConfig.ModifierOutcome<>(tiers.get(0), group)
-                    .makeModifier(random);
-            sample.addCategory(VaultGearModifier.AffixCategory.CORRUPTED);
-            Optional<MutableComponent> rendered = sample.getDisplay(data, type, gear, true);
-            if (rendered.isPresent()) {
-                return rendered.get();
-            }
-        } catch (RuntimeException | LinkageError ignored) {
-            // The Vault's display helpers are @OnlyIn(CLIENT) and get stripped on a dedicated
-            // server (NoSuchMethodError is a LinkageError). Degrade to the identifier instead
-            // of breaking the option list.
-        }
-        return new TextComponent(group.getIdentifier().toString()).withStyle(ChatFormatting.GRAY);
-    }
-
     /** Affixes of the gear that can be replaced, in prefix-then-suffix order. */
-    public static List<Target> targets(ItemStack gear, VaultGearData data) {
+    public static List<Target> targets(VaultGearData data) {
         List<Target> result = new ArrayList<>();
         for (VaultGearModifier.AffixType type : new VaultGearModifier.AffixType[]{
                 VaultGearModifier.AffixType.PREFIX, VaultGearModifier.AffixType.SUFFIX}) {
             for (VaultGearModifier<?> modifier : data.getModifiers(type)) {
-                if (!modifier.canBeModified()) {
-                    continue;
+                if (modifier.canBeModified()) {
+                    result.add(new Target(type, modifier));
                 }
-                Component display;
-                try {
-                    display = modifier.getDisplay(data, type, gear, false)
-                            .<Component>map(component -> component)
-                            .orElseGet(() -> new TextComponent(String.valueOf(modifier.getModifierIdentifier())));
-                } catch (RuntimeException | LinkageError exception) {
-                    display = new TextComponent(String.valueOf(modifier.getModifierIdentifier()));
-                }
-                result.add(new Target(type, modifier, display));
             }
         }
         return result;
@@ -249,11 +211,11 @@ public final class SealerLogic {
         for (Option option : options(gear)) {
             byte sides = (byte) ((option.prefixAllowed() ? MsgSyncOptions.SIDE_PREFIX : 0)
                     | (option.suffixAllowed() ? MsgSyncOptions.SIDE_SUFFIX : 0));
-            msg.options.add(new MsgSyncOptions.OptionEntry(option.id(), sides, option.display()));
+            msg.options.add(new MsgSyncOptions.OptionEntry(option.id(), sides));
         }
-        for (Target target : targets(gear, data)) {
+        for (Target target : targets(data)) {
             msg.targets.add(new MsgSyncOptions.TargetEntry(
-                    target.type() == VaultGearModifier.AffixType.PREFIX, target.display()));
+                    target.type() == VaultGearModifier.AffixType.PREFIX));
         }
         msg.canSeal = canSeal(menu, menu.getPlayer());
         return msg;
@@ -262,7 +224,7 @@ public final class SealerLogic {
     /**
      * Applies one sealing operation. Returns true when the gear was sealed.
      *
-     * @param targetIndex index into {@link #targets(ItemStack, VaultGearData)}, or -1 to add a new affix
+     * @param targetIndex index into {@link #targets(VaultGearData)}, or -1 to add a new affix
      */
     public static boolean seal(GearSealerProMenu menu, ServerPlayer player, ResourceLocation optionId,
                                VaultGearModifier.AffixType affixType, int targetIndex) {
@@ -298,7 +260,7 @@ public final class SealerLogic {
         // compares modifier instances by identity, not by value.
         VaultGearModifier<?> replaced = null;
         if (targetIndex >= 0) {
-            List<Target> targets = targets(gear, outData);
+            List<Target> targets = targets(outData);
             if (targetIndex >= targets.size()) {
                 return false;
             }
