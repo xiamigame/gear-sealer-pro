@@ -1,6 +1,6 @@
-package com.gearsealerpro.network;
+package space.xiami.projects.gearsealerpro.network;
 
-import com.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;

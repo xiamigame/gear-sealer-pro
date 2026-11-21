@@ -1,10 +1,10 @@
-package com.gearsealerpro;
+package space.xiami.projects.gearsealerpro;
 
-import com.gearsealerpro.network.NetworkHandler;
-import com.gearsealerpro.registry.ModBlockEntities;
-import com.gearsealerpro.registry.ModBlocks;
-import com.gearsealerpro.registry.ModItems;
-import com.gearsealerpro.registry.ModMenus;
+import space.xiami.projects.gearsealerpro.network.NetworkHandler;
+import space.xiami.projects.gearsealerpro.registry.ModBlockEntities;
+import space.xiami.projects.gearsealerpro.registry.ModBlocks;
+import space.xiami.projects.gearsealerpro.registry.ModItems;
+import space.xiami.projects.gearsealerpro.registry.ModMenus;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;

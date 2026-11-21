@@ -1,10 +1,10 @@
-package com.gearsealerpro.client;
+package space.xiami.projects.gearsealerpro.client;
 
-import com.gearsealerpro.menu.GearSealerProMenu;
-import com.gearsealerpro.network.MsgCommitSeal;
-import com.gearsealerpro.network.MsgRequestOptions;
-import com.gearsealerpro.network.MsgSyncOptions;
-import com.gearsealerpro.network.NetworkHandler;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.network.MsgCommitSeal;
+import space.xiami.projects.gearsealerpro.network.MsgRequestOptions;
+import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
+import space.xiami.projects.gearsealerpro.network.NetworkHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import iskallia.vault.gear.attribute.VaultGearModifier;
 import java.util.ArrayList;

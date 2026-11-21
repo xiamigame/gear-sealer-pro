@@ -1,6 +1,6 @@
-package com.gearsealerpro.network;
+package space.xiami.projects.gearsealerpro.network;
 
-import com.gearsealerpro.client.ClientSealData;
+import space.xiami.projects.gearsealerpro.client.ClientSealData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;

@@ -1,7 +1,7 @@
-package com.gearsealerpro.registry;
+package space.xiami.projects.gearsealerpro.registry;
 
-import com.gearsealerpro.GearSealerProMod;
-import com.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.GearSealerProMod;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.registries.DeferredRegister;

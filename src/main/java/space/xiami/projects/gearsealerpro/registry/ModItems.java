@@ -1,6 +1,6 @@
-package com.gearsealerpro.registry;
+package space.xiami.projects.gearsealerpro.registry;
 
-import com.gearsealerpro.GearSealerProMod;
+import space.xiami.projects.gearsealerpro.GearSealerProMod;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;

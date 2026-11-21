@@ -1,7 +1,7 @@
-package com.gearsealerpro.client;
+package space.xiami.projects.gearsealerpro.client;
 
-import com.gearsealerpro.GearSealerProMod;
-import com.gearsealerpro.registry.ModMenus;
+import space.xiami.projects.gearsealerpro.GearSealerProMod;
+import space.xiami.projects.gearsealerpro.registry.ModMenus;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;

@@ -1,7 +1,7 @@
-package com.gearsealerpro.block;
+package space.xiami.projects.gearsealerpro.block;
 
-import com.gearsealerpro.menu.GearSealerProMenu;
-import com.gearsealerpro.registry.ModBlockEntities;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.registry.ModBlockEntities;
 import iskallia.vault.container.oversized.OverSizedInventory;
 import iskallia.vault.gear.VaultGearState;
 import iskallia.vault.gear.data.VaultGearData;

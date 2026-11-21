@@ -1,4 +1,4 @@
-package com.gearsealerpro.block;
+package space.xiami.projects.gearsealerpro.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

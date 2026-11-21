@@ -17,6 +17,7 @@ Gear Sealer Pro 把这两个随机换成玩家自选：
 
 ```text
 MC 1.18.2 | Forge 40.3.11 | ForgeGradle [6.0,6.2) | Gradle 8.8 (wrapper) | JDK 17 | mappings official 1.18.2
+包名 space.xiami.projects.gearsealerpro（GroupId space.xiami.projects + mod gearsealerpro）
 依赖：the_vault 3.21.6.6884（Wold's Vaults 0.34.1），compileOnly，运行期由整合包提供
 验证：.\gradlew.bat build --no-daemon 通过（2026-11-21）
 ```

@@ -1,6 +1,6 @@
-package com.gearsealerpro.network;
+package space.xiami.projects.gearsealerpro.network;
 
-import com.gearsealerpro.GearSealerProMod;
+import space.xiami.projects.gearsealerpro.GearSealerProMod;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;

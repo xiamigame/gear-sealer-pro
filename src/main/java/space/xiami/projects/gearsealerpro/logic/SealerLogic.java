@@ -1,7 +1,7 @@
-package com.gearsealerpro.logic;
+package space.xiami.projects.gearsealerpro.logic;
 
-import com.gearsealerpro.menu.GearSealerProMenu;
-import com.gearsealerpro.network.MsgSyncOptions;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
 import iskallia.vault.config.gear.VaultGearCraftingConfig.ProficiencyStep;
 import iskallia.vault.config.gear.VaultGearTierConfig;
 import iskallia.vault.gear.GearRollHelper;

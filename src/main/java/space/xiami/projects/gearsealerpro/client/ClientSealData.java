@@ -1,6 +1,6 @@
-package com.gearsealerpro.client;
+package space.xiami.projects.gearsealerpro.client;
 
-import com.gearsealerpro.network.MsgSyncOptions;
+import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
 
 /** Latest option snapshot pushed by the server for the currently open Gear Sealer Pro. */
 public final class ClientSealData {

@@ -1,7 +1,7 @@
-package com.gearsealerpro.registry;
+package space.xiami.projects.gearsealerpro.registry;
 
-import com.gearsealerpro.GearSealerProMod;
-import com.gearsealerpro.block.GearSealerProBlock;
+import space.xiami.projects.gearsealerpro.GearSealerProMod;
+import space.xiami.projects.gearsealerpro.block.GearSealerProBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;

@@ -1,7 +1,7 @@
-package com.gearsealerpro.network;
+package space.xiami.projects.gearsealerpro.network;
 
-import com.gearsealerpro.logic.SealerLogic;
-import com.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.logic.SealerLogic;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
 import iskallia.vault.gear.attribute.VaultGearModifier;
 import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;

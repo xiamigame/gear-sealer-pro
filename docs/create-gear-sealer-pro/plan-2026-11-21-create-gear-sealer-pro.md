@@ -156,3 +156,22 @@
 - **影响**：仓库首次成型；整合包 `mods/` 未改动（按用户选择，jar 由用户自行复制）。
 - **生效**：2026-11-21
 - **状态**：ACTIVE
+
+### A2 · 2026-11-21 · 提出人：user
+
+- **类型**：修订（破坏性变更：Java 主包名）
+- **关联**：L1 第 3 条（mod_group_id）与 A1
+- **变更**：
+  - 按 skill §1 第 4 项与 §1.1，主包名改由用户确认：`space.xiami.projects.gearsealerpro`
+    （GroupId `space.xiami.projects` + mod `gearsealerpro`）。
+  - `mod_group_id` 改为 `space.xiami.projects.gearsealerpro`（与主包名一致）；`mod_id` 保持 `gearsealerpro`。
+  - 源码目录 `src/main/java/com/gearsealerpro/` → `src/main/java/space/xiami/projects/gearsealerpro/`，
+    16 个类的 `package`/`import` 全部重写，无 `com.gearsealerpro` 残留。
+- **证据**：
+  - `.\gradlew.bat build --no-daemon` → `BUILD SUCCESSFUL`。
+  - 产物 `build/libs/gearsealerpro-1.18.2-0.1.0.jar`：52 条目，`space/xiami/projects/gearsealerpro/*` 31 条，
+    `com/gearsealerpro*` 0 条。
+  - `gradle.properties`：`mod_group_id == 主包名`，`mod_id=gearsealerpro` 不变，`mods.toml` 的 modId 与资源命名空间不受影响。
+- **影响**：包名是公开契约（import、AT、资源路径、Maven 坐标）；当前未发布、无外部消费者，风险为零。
+- **生效**：2026-11-21
+- **状态**：ACTIVE

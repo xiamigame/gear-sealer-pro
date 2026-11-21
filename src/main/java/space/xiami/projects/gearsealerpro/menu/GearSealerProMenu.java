@@ -1,9 +1,9 @@
-package com.gearsealerpro.menu;
+package space.xiami.projects.gearsealerpro.menu;
 
-import com.gearsealerpro.block.GearSealerProBlockEntity;
-import com.gearsealerpro.logic.SealerLogic;
-import com.gearsealerpro.network.NetworkHandler;
-import com.gearsealerpro.registry.ModMenus;
+import space.xiami.projects.gearsealerpro.block.GearSealerProBlockEntity;
+import space.xiami.projects.gearsealerpro.logic.SealerLogic;
+import space.xiami.projects.gearsealerpro.network.NetworkHandler;
+import space.xiami.projects.gearsealerpro.registry.ModMenus;
 import iskallia.vault.container.oversized.OverSizedSlotContainer;
 import iskallia.vault.container.oversized.OverSizedTabSlot;
 import iskallia.vault.container.slot.RecipeOutputSlot;
