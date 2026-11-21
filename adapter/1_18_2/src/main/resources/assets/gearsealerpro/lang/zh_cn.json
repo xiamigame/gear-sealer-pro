@@ -8,5 +8,6 @@
   "gui.gearsealerpro.seal": "封印",
   "gui.gearsealerpro.insert_gear": "放入一件装备开始选择",
   "gui.gearsealerpro.focus": "虚空焦点 %s/%s",
+  "gui.gearsealerpro.creative_free": "创造模式：不消耗材料（与原版一致）",
   "gui.gearsealerpro.cost": "消耗"
 }

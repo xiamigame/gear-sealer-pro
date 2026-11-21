@@ -38,11 +38,6 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
     private static final int LEFT_LIST_W = PanelLayout.LEFT_LIST_WIDTH;
     private static final int RIGHT_LIST_X = PanelLayout.RIGHT_LIST_X;
     private static final int RIGHT_LIST_W = PanelLayout.RIGHT_LIST_WIDTH;
-    private static final int TOGGLE_X = PanelLayout.TOGGLE_X;
-    private static final int TOGGLE_Y = PanelLayout.TOGGLE_Y;
-    private static final int TOGGLE_W = PanelLayout.TOGGLE_WIDTH;
-    private static final int TOGGLE_H = PanelLayout.TOGGLE_HEIGHT;
-    private static final int TOGGLE_GAP = PanelLayout.TOGGLE_GAP;
     private static final int SEAL_X = PanelLayout.SEAL_X;
     private static final int SEAL_Y = PanelLayout.SEAL_Y;
     private static final int SEAL_W = PanelLayout.SEAL_WIDTH;
@@ -87,7 +82,6 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         super.render(pose, mouseX, mouseY, partialTick);
         MsgSyncOptions data = ClientSealData.get();
         this.drawHeaders(pose);
-        this.drawSideToggles(pose, mouseX, mouseY, data);
         this.drawLists(pose, mouseX, mouseY, data);
         this.drawCost(pose, data);
         this.drawSealButton(pose, mouseX, mouseY, data);
@@ -137,31 +131,6 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
                 this.leftPos + LEFT_LIST_X, this.topPos + 84, 0xFFD8B45A);
         this.font.draw(pose, new TranslatableComponent("gui.gearsealerpro.targets"),
                 this.leftPos + RIGHT_LIST_X, this.topPos + 84, 0xFFD8B45A);
-    }
-
-    /**
-     * The affix side is only a real choice when adding a new affix; when replacing, the side
-     * is decided by the target row the player picked.
-     */
-    private void drawSideToggles(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
-        if (!this.selection.isAddMode() || !data.hasGear) {
-            return;
-        }
-        boolean prefix = this.selection.effectivePrefix();
-        this.drawToggle(pose, mouseX, mouseY, TOGGLE_X, prefix, true);
-        this.drawToggle(pose, mouseX, mouseY, TOGGLE_X + TOGGLE_W + TOGGLE_GAP, !prefix, false);
-    }
-
-    private void drawToggle(PoseStack pose, int mouseX, int mouseY, int x, boolean prefix, boolean active) {
-        int screenX = this.leftPos + x;
-        int screenY = this.topPos + TOGGLE_Y;
-        boolean hovered = PanelLayout.inside(mouseX, mouseY, screenX, screenY, TOGGLE_W, TOGGLE_H);
-        int background = active ? 0xFF4A6B34 : (hovered ? 0xFF3A3A44 : 0xFF2A2A31);
-        fill(pose, screenX, screenY, screenX + TOGGLE_W, screenY + TOGGLE_H, background);
-        Component label = new TranslatableComponent(prefix
-                ? "gui.gearsealerpro.prefix" : "gui.gearsealerpro.suffix");
-        this.font.draw(pose, label, screenX + (TOGGLE_W - this.font.width(label)) / 2F,
-                screenY + 3, active ? 0xFFEFEFEF : 0xFF9A9AA4);
     }
 
     private void drawLists(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
@@ -227,6 +196,13 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         }
         CostView cost = new CostView(data.haveGold, data.costGold, data.havePainite, data.costPainite,
                 data.haveFocus, data.costFocus);
+
+        // Matches the vanilla sealer: creative mode seals without consuming anything.
+        if (this.minecraft != null && this.minecraft.player != null && this.minecraft.player.isCreative()) {
+            this.font.draw(pose, new TranslatableComponent("gui.gearsealerpro.creative_free"),
+                    this.leftPos + 8, this.topPos + 178, 0xFFAFAFB8);
+            return;
+        }
 
         Component gold = new TextComponent("Vault Gold " + cost.goldText());
         this.font.draw(pose, gold, this.leftPos + 8, this.topPos + 172,
@@ -307,24 +283,6 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         MsgSyncOptions data = ClientSealData.get();
         if (!data.hasGear) {
             return false;
-        }
-
-        if (this.selection.isAddMode()) {
-            int toggleY = this.topPos + TOGGLE_Y;
-            if (mouseY >= toggleY && mouseY < toggleY + TOGGLE_H) {
-                int toggleX = this.leftPos + TOGGLE_X;
-                if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
-                    this.selection.setAddPrefix(true);
-                    this.selection.resetOptionScroll();
-                    return true;
-                }
-                toggleX += TOGGLE_W + TOGGLE_GAP;
-                if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
-                    this.selection.setAddPrefix(false);
-                    this.selection.resetOptionScroll();
-                    return true;
-                }
-            }
         }
 
         int leftX = this.leftPos + LEFT_LIST_X;

@@ -35,14 +35,14 @@ class SelectionModelTest {
     }
 
     @Test
-    void switchingAddSideReturnsToAddRow() {
+    void returningToAddRowUsesPrefixAgain() {
         SelectionModel model = new SelectionModel();
-        model.selectTarget(2, true);
+        model.selectTarget(2, false);
 
-        model.setAddPrefix(false);
+        model.selectTarget(SelectionModel.ADD_ROW, false);
 
         assertTrue(model.isAddMode());
-        assertFalse(model.effectivePrefix());
+        assertTrue(model.effectivePrefix());
     }
 
     @Test
@@ -104,15 +104,16 @@ class SelectionModelTest {
     }
 
     @Test
-    void addModeRequestUsesTheToggleSide() {
+    void addModeAlwaysUsesPrefix() {
         SelectionModel model = new SelectionModel();
-        model.setAddPrefix(false);
+        model.selectTarget(2, false);
         model.selectOption(new SealOptionKey("the_vault:thorns"));
+        model.selectTarget(SelectionModel.ADD_ROW, false);
 
         SealRequest request = model.toRequest();
 
         assertTrue(request.addsAffix());
-        assertFalse(request.prefix());
+        assertTrue(request.prefix());
         assertEquals(SealRequest.ADD_NEW_AFFIX, request.targetIndex());
     }
 }

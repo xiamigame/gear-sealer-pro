@@ -27,6 +27,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
 import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
@@ -330,26 +331,37 @@ public final class SealerLogic {
         return true;
     }
 
+    /**
+     * Takes the materials out of the sealer.
+     *
+     * <p>{@code OverSizedInventory#getItem} returns a fresh copy, so shrinking that stack and
+     * calling {@code setChanged()} would silently do nothing. The stack has to be written back
+     * through {@link net.minecraft.world.inventory.Slot#set(ItemStack)}.</p>
+     */
     private static void consume(GearSealerProMenu menu, ServerPlayer player, VaultSealerCost cost) {
-        ItemStack focus = menu.getFocusSlot().getItem();
+        Slot focusSlot = menu.getFocusSlot();
+        ItemStack focus = focusSlot.getItem().copy();
         focus.shrink(cost.vorpalFocus());
-        menu.getFocusSlot().setChanged();
+        focusSlot.set(focus);
 
-        ItemStack gold = menu.getGoldSlot().getItem();
+        Slot goldSlot = menu.getGoldSlot();
+        ItemStack gold = goldSlot.getItem().copy();
         if (gold.getCount() >= cost.vaultGold()) {
             gold.shrink(cost.vaultGold());
+            goldSlot.set(gold);
         } else {
             int remaining = cost.vaultGold() - gold.getCount();
-            gold.setCount(0);
+            goldSlot.set(ItemStack.EMPTY);
             CoinDefinition.getCoinDefinition(ModBlocks.VAULT_GOLD).ifPresent(coin ->
                     CoinDefinition.deductCoins(InventoryUtil.findAllItems(player),
                             remaining * coin.coinValue, coin));
         }
-        menu.getGoldSlot().setChanged();
 
         if (cost.painite() > 0) {
-            menu.getPainiteSlot().getItem().shrink(cost.painite());
-            menu.getPainiteSlot().setChanged();
+            Slot painiteSlot = menu.getPainiteSlot();
+            ItemStack painite = painiteSlot.getItem().copy();
+            painite.shrink(cost.painite());
+            painiteSlot.set(painite);
         }
     }
 }

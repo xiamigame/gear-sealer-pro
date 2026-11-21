@@ -7,6 +7,9 @@ import space.xiami.projects.gearsealerpro.api.SealRequest;
  * Pure state machine behind the Gear Sealer Pro screen: what is selected, which affix side is
  * being used, and how far the two lists are scrolled. No rendering, no item stacks, so it can be
  * unit-tested without Minecraft.
+ *
+ * <p>Affix side rule: replacing takes the side of the chosen target; adding always uses a
+ * prefix slot. There is no manual side switch.</p>
  */
 public final class SelectionModel {
 
@@ -15,7 +18,6 @@ public final class SelectionModel {
 
     private SealOptionKey selectedOption;
     private int selectedTargetRow = ADD_ROW;
-    private boolean addPrefix = true;
     private boolean targetPrefix = true;
     private int optionScroll;
     private int targetScroll;
@@ -44,14 +46,9 @@ public final class SelectionModel {
         return this.selectedTargetRow == ADD_ROW;
     }
 
-    /** Affix side of the operation: the target's side when replacing, the toggle's side when adding. */
+    /** A new affix is always added as a prefix; a replacement uses the target's own side. */
     public boolean effectivePrefix() {
-        return isAddMode() ? this.addPrefix : this.targetPrefix;
-    }
-
-    public void setAddPrefix(boolean prefix) {
-        this.addPrefix = prefix;
-        this.selectedTargetRow = ADD_ROW;
+        return isAddMode() || this.targetPrefix;
     }
 
     /**

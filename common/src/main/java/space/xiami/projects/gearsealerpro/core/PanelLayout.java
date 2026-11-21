@@ -19,12 +19,6 @@ public final class PanelLayout {
     public static final int RIGHT_LIST_X = 122;
     public static final int RIGHT_LIST_WIDTH = 110;
 
-    public static final int TOGGLE_X = 31;
-    public static final int TOGGLE_Y = 66;
-    public static final int TOGGLE_WIDTH = 36;
-    public static final int TOGGLE_HEIGHT = 14;
-    public static final int TOGGLE_GAP = 4;
-
     public static final int SEAL_X = 150;
     public static final int SEAL_Y = 166;
     public static final int SEAL_WIDTH = 82;

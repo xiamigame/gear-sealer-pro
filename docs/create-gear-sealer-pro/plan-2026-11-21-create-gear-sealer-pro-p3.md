@@ -256,3 +256,29 @@ gear-sealer-pro/
 - **未验证**：没有真实专用服务器实测；断言依据是 Forge DistCleaner 语义与"服务端零 client API"的静态核对。
 - **影响**：旧版客户端与新版服务端不能互连（协议版本不同会被 Forge 拒收）；单人无感。
 - **状态**：ACTIVE
+
+### A9 · 2026-11-21 · 提出人：user（两条反馈）
+
+- **类型**：补丁（0.2.0 → 0.2.1）
+- **关联**：A8
+
+**1）去掉前后缀选择器**
+- 结论：替换时侧别由目标词条决定；新增时固定用前缀，因此手动切换没有意义。
+- 变更：`SelectionModel` 删除 `addPrefix` / `setAddPrefix`，`effectivePrefix()` = 新增模式恒为
+  `true`，否则取目标侧；界面删除 `drawSideToggles/drawToggle` 与对应点击分支；`PanelLayout`
+  删除 `TOGGLE_*` 常量；单测改为「新增恒前缀」。
+- 影响：新增词条时只会列出允许前缀的密封词条（generic 兜底里只允许后缀的条目不出现）。
+
+**2）生存模式封印不扣材料（真 bug）**
+- 根因：`OverSizedItemStack.overSizedStack()` 每次返回 `stack().copy()`，所以
+  `OverSizedInventory#getItem` 给的是**副本**；旧 `consume()` 对副本 `shrink` 再 `setChanged()`，
+  真实数量没变。原版封印台靠 `slot.set(stack)` 写回。
+- 变更：`consume()` 改为「取副本 → shrink → `Slot#set(...)` 写回」；金币不足时
+  `goldSlot.set(ItemStack.EMPTY)` 再从背包扣币（与原版一致）。
+- 另加：创造模式下成本区显示「创造模式：不消耗材料（与原版一致）」，避免误判。
+
+- **证据**：
+  - `.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon` → `BUILD SUCCESSFUL`
+  - 产物 `adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.2.1.jar`
+- **未验证**：生存模式实际扣材料（需用户复测）。
+- **状态**：ACTIVE

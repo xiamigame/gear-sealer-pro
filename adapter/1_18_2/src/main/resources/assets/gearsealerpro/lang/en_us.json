@@ -8,5 +8,6 @@
   "gui.gearsealerpro.seal": "Seal",
   "gui.gearsealerpro.insert_gear": "Insert a gear piece to begin",
   "gui.gearsealerpro.focus": "Vorpal Focus %s/%s",
+  "gui.gearsealerpro.creative_free": "Creative mode: sealing consumes nothing",
   "gui.gearsealerpro.cost": "Cost"
 }
