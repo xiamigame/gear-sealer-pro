@@ -18,9 +18,18 @@ Gear Sealer Pro 把这两个随机换成玩家自选：
 ```text
 MC 1.18.2 | Forge 40.3.11 | ForgeGradle [6.0,6.2) | Gradle 8.8 (wrapper) | JDK 17 | mappings official 1.18.2
 包名 space.xiami.projects.gearsealerpro（GroupId space.xiami.projects + mod gearsealerpro）
+形态 common + adapter（adapter/1_18_2 是唯一接触 MDK 的模块，产物为合并后的单 jar）
 依赖：the_vault 3.21.6.6884（Wold's Vaults 0.34.1），compileOnly，运行期由整合包提供
-验证：.\gradlew.bat build --no-daemon 通过（2026-11-21）
+验证：.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon 通过（2026-11-21）
 ```
+
+## 仓库结构
+
+| 目录 | 内容 |
+|---|---|
+| `common/` | 纯 JVM，零 Minecraft/Forge 依赖：`api`（密封请求值对象）、`core`（选择状态机、面板布局、消耗视图）+ JUnit5 单测 |
+| `adapter/1_18_2/` | 唯一接触 Forge/MDK 的模块：方块、方块实体、菜单、网络、界面、密封逻辑、注册、`mods.toml`、lang、模型与配方 |
+| `.github/workflows/release.yml` | tag `v*` 触发的发布流水线（self-hosted runner） |
 
 ## 构建
 
@@ -28,22 +37,16 @@ MC 1.18.2 | Forge 40.3.11 | ForgeGradle [6.0,6.2) | Gradle 8.8 (wrapper) | JDK 1
 （`libs/` 不入库，属于本地依赖）。
 
 ```powershell
-.\gradlew.bat build --no-daemon
+.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon
 ```
 
-产物：`build/libs/gearsealerpro-1.18.2-0.1.0.jar`，放进整合包 `mods/` 即可。
+产物：`adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.1.0.jar`，放进整合包 `mods/` 即可。
 构建只使用官方 Gradle 发行版、官方 Forge maven 与官方插件门户，不使用镜像或离线缓存。
 
 ## 获得方式
 
 工作台合成：原版 `the_vault:vault_sealer` 放在中间，下方放一个 `minecraft:netherite_ingot`
 （两行竖排）。创造模式物品栏位于「装饰性方块」。
-
-## 目录
-
-- `src/main/java/com/gearsealerpro/` —— mod 代码（方块、方块实体、菜单、界面、网络、密封逻辑）
-- `src/main/resources/` —— `mods.toml`、语言文件、blockstate/模型、配方
-- `docs/create-gear-sealer-pro/` —— 开发计划与执行记录
 
 ## 已知限制
 

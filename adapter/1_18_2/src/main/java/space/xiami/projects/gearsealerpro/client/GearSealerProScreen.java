@@ -1,10 +1,5 @@
 package space.xiami.projects.gearsealerpro.client;
 
-import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
-import space.xiami.projects.gearsealerpro.network.MsgCommitSeal;
-import space.xiami.projects.gearsealerpro.network.MsgRequestOptions;
-import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
-import space.xiami.projects.gearsealerpro.network.NetworkHandler;
 import com.mojang.blaze3d.vertex.PoseStack;
 import iskallia.vault.gear.attribute.VaultGearModifier;
 import java.util.ArrayList;
@@ -13,10 +8,19 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import space.xiami.projects.gearsealerpro.api.SealOptionKey;
+import space.xiami.projects.gearsealerpro.api.SealRequest;
+import space.xiami.projects.gearsealerpro.core.CostView;
+import space.xiami.projects.gearsealerpro.core.PanelLayout;
+import space.xiami.projects.gearsealerpro.core.SelectionModel;
+import space.xiami.projects.gearsealerpro.menu.GearSealerProMenu;
+import space.xiami.projects.gearsealerpro.network.MsgCommitSeal;
+import space.xiami.projects.gearsealerpro.network.MsgRequestOptions;
+import space.xiami.projects.gearsealerpro.network.MsgSyncOptions;
+import space.xiami.projects.gearsealerpro.network.NetworkHandler;
 
 /**
  * The Gear Sealer Pro screen: pick a sealed modifier on the left, pick what it replaces on
@@ -24,34 +28,25 @@ import net.minecraft.world.item.ItemStack;
  */
 public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMenu> {
 
-    private static final int PANEL_WIDTH = 176;
-    private static final int PANEL_HEIGHT = 286;
+    private static final int PANEL_WIDTH = PanelLayout.WIDTH;
+    private static final int PANEL_HEIGHT = PanelLayout.HEIGHT;
+    private static final int LIST_Y = PanelLayout.LIST_Y;
+    private static final int LIST_ROW_HEIGHT = PanelLayout.ROW_HEIGHT;
+    private static final int LIST_ROWS = PanelLayout.VISIBLE_ROWS;
+    private static final int LIST_HEIGHT = PanelLayout.LIST_HEIGHT;
+    private static final int LEFT_LIST_X = PanelLayout.LEFT_LIST_X;
+    private static final int LEFT_LIST_W = PanelLayout.LEFT_LIST_WIDTH;
+    private static final int RIGHT_LIST_X = PanelLayout.RIGHT_LIST_X;
+    private static final int RIGHT_LIST_W = PanelLayout.RIGHT_LIST_WIDTH;
+    private static final int TOGGLE_Y = PanelLayout.TOGGLE_Y;
+    private static final int TOGGLE_W = PanelLayout.TOGGLE_WIDTH;
+    private static final int TOGGLE_H = PanelLayout.TOGGLE_HEIGHT;
+    private static final int SEAL_X = PanelLayout.SEAL_X;
+    private static final int SEAL_Y = PanelLayout.SEAL_Y;
+    private static final int SEAL_W = PanelLayout.SEAL_WIDTH;
+    private static final int SEAL_H = PanelLayout.SEAL_HEIGHT;
 
-    private static final int LIST_Y = 96;
-    private static final int LIST_ROW_HEIGHT = 18;
-    private static final int LIST_ROWS = 4;
-    private static final int LIST_HEIGHT = LIST_ROW_HEIGHT * LIST_ROWS;
-
-    private static final int LEFT_LIST_X = 8;
-    private static final int LEFT_LIST_W = 80;
-    private static final int RIGHT_LIST_X = 92;
-    private static final int RIGHT_LIST_W = 76;
-
-    private static final int TOGGLE_Y = 66;
-    private static final int TOGGLE_W = 40;
-    private static final int TOGGLE_H = 14;
-
-    private static final int SEAL_X = 104;
-    private static final int SEAL_Y = 166;
-    private static final int SEAL_W = 64;
-    private static final int SEAL_H = 22;
-
-    private int selectedTarget;            // 0 = add a new affix, otherwise (index + 1)
-    private ResourceLocation selectedOptionId;
-    private int selectedOptionType = -1;
-    private int optionScroll;
-    private int targetScroll;
-    private VaultGearModifier.AffixType toggleType = VaultGearModifier.AffixType.PREFIX;
+    private final SelectionModel selection = new SelectionModel();
 
     private ItemStack lastGear = ItemStack.EMPTY;
     private int tickCounter;
@@ -95,9 +90,9 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         this.drawCost(pose, data);
         this.drawSealButton(pose, mouseX, mouseY, data);
         if (this.hoveredOption != null) {
-            this.renderComponentTooltip(pose, java.util.List.of(this.hoveredOption), mouseX, mouseY);
+            this.renderComponentTooltip(pose, List.of(this.hoveredOption), mouseX, mouseY);
         } else if (this.hoveredTarget != null) {
-            this.renderComponentTooltip(pose, java.util.List.of(this.hoveredTarget), mouseX, mouseY);
+            this.renderComponentTooltip(pose, List.of(this.hoveredTarget), mouseX, mouseY);
         }
     }
 
@@ -137,22 +132,20 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
     }
 
     private void drawToggles(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
-        boolean lockedToTarget = this.selectedTarget > 0;
-        this.drawToggle(pose, mouseX, mouseY, LEFT_LIST_X, VaultGearModifier.AffixType.PREFIX, lockedToTarget, data);
-        this.drawToggle(pose, mouseX, mouseY, LEFT_LIST_X + TOGGLE_W + 4, VaultGearModifier.AffixType.SUFFIX,
-                lockedToTarget, data);
+        boolean lockedToTarget = !this.selection.isAddMode();
+        this.drawToggle(pose, mouseX, mouseY, LEFT_LIST_X, true, lockedToTarget);
+        this.drawToggle(pose, mouseX, mouseY, LEFT_LIST_X + TOGGLE_W + 4, false, lockedToTarget);
     }
 
-    private void drawToggle(PoseStack pose, int mouseX, int mouseY, int x, VaultGearModifier.AffixType type,
-                            boolean lockedToTarget, MsgSyncOptions data) {
+    private void drawToggle(PoseStack pose, int mouseX, int mouseY, int x, boolean prefix,
+                            boolean lockedToTarget) {
         int screenX = this.leftPos + x;
         int screenY = this.topPos + TOGGLE_Y;
-        boolean active = currentType(data) == type.ordinal();
-        boolean hovered = mouseX >= screenX && mouseX < screenX + TOGGLE_W
-                && mouseY >= screenY && mouseY < screenY + TOGGLE_H;
+        boolean active = this.selection.effectivePrefix() == prefix;
+        boolean hovered = PanelLayout.inside(mouseX, mouseY, screenX, screenY, TOGGLE_W, TOGGLE_H);
         int background = active ? 0xFF4A6B34 : (hovered && !lockedToTarget ? 0xFF3A3A44 : 0xFF2A2A31);
         fill(pose, screenX, screenY, screenX + TOGGLE_W, screenY + TOGGLE_H, background);
-        Component label = new TranslatableComponent(type == VaultGearModifier.AffixType.PREFIX
+        Component label = new TranslatableComponent(prefix
                 ? "gui.gearsealerpro.prefix" : "gui.gearsealerpro.suffix");
         this.font.draw(pose, label, screenX + (TOGGLE_W - this.font.width(label)) / 2F,
                 screenY + 3, lockedToTarget && !active ? 0xFF6A6A6A : 0xFFEFEFEF);
@@ -166,14 +159,14 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         int leftX = this.leftPos + LEFT_LIST_X;
         int listY = this.topPos + LIST_Y;
         for (int row = 0; row < LIST_ROWS; row++) {
-            int index = this.optionScroll + row;
+            int index = this.selection.optionScroll() + row;
             if (index >= options.size()) {
                 break;
             }
             MsgSyncOptions.OptionEntry entry = options.get(index);
             int rowY = listY + row * LIST_ROW_HEIGHT;
-            boolean hovered = isInside(mouseX, mouseY, leftX, rowY, LEFT_LIST_W, LIST_ROW_HEIGHT);
-            if (entry.id().equals(this.selectedOptionId) && entry.type() == this.selectedOptionType) {
+            boolean hovered = PanelLayout.inside(mouseX, mouseY, leftX, rowY, LEFT_LIST_W, LIST_ROW_HEIGHT);
+            if (isSelected(entry)) {
                 fill(pose, leftX, rowY, leftX + LEFT_LIST_W, rowY + LIST_ROW_HEIGHT, 0x664A8AD8);
             } else if (hovered) {
                 fill(pose, leftX, rowY, leftX + LEFT_LIST_W, rowY + LIST_ROW_HEIGHT, 0x33FFFFFF);
@@ -188,14 +181,14 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         int rightX = this.leftPos + RIGHT_LIST_X;
         List<Row> rows = targetRows(data);
         for (int row = 0; row < LIST_ROWS; row++) {
-            int index = this.targetScroll + row;
+            int index = this.selection.targetScroll() + row;
             if (index >= rows.size()) {
                 break;
             }
             Row targetRow = rows.get(index);
             int rowY = listY + row * LIST_ROW_HEIGHT;
-            boolean hovered = isInside(mouseX, mouseY, rightX, rowY, RIGHT_LIST_W, LIST_ROW_HEIGHT);
-            if (index == this.selectedTarget) {
+            boolean hovered = PanelLayout.inside(mouseX, mouseY, rightX, rowY, RIGHT_LIST_W, LIST_ROW_HEIGHT);
+            if (index == this.selection.selectedTargetRow()) {
                 fill(pose, rightX, rowY, rightX + RIGHT_LIST_W, rowY + LIST_ROW_HEIGHT, 0x664A8AD8);
             } else if (hovered) {
                 fill(pose, rightX, rowY, rightX + RIGHT_LIST_W, rowY + LIST_ROW_HEIGHT, 0x33FFFFFF);
@@ -217,19 +210,21 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         if (!data.hasGear) {
             return;
         }
-        this.drawCostLine(pose, 8, 172, data.haveGold, data.costGold, "Vault Gold", "item.the_vault.vault_gold");
-        this.drawCostLine(pose, 8, 182, data.havePainite, data.costPainite, "Painite", "item.the_vault.painite_gem");
-        // Focus is shown on its own row to keep the numbers readable.
-        Component focusLabel = new TranslatableComponent("gui.gearsealerpro.focus",
+        CostView cost = new CostView(data.haveGold, data.costGold, data.havePainite, data.costPainite,
                 data.haveFocus, data.costFocus);
-        this.font.draw(pose, focusLabel, this.leftPos + 8, this.topPos + 192,
-                data.haveFocus >= data.costFocus ? 0xFF9BE39B : 0xFFE39B9B);
-    }
 
-    private void drawCostLine(PoseStack pose, int x, int y, int have, int need, String fallback, String ignoredKey) {
-        Component label = new TextComponent(fallback + " " + have + "/" + need);
-        this.font.draw(pose, label, this.leftPos + x, this.topPos + y,
-                have >= need ? 0xFF9BE39B : 0xFFE39B9B);
+        Component gold = new TextComponent("Vault Gold " + cost.goldText());
+        this.font.draw(pose, gold, this.leftPos + 8, this.topPos + 172,
+                cost.goldEnough() ? 0xFF9BE39B : 0xFFE39B9B);
+
+        Component painite = new TextComponent("Painite " + cost.painiteText());
+        this.font.draw(pose, painite, this.leftPos + 8, this.topPos + 182,
+                cost.painiteEnough() ? 0xFF9BE39B : 0xFFE39B9B);
+
+        Component focus = new TranslatableComponent("gui.gearsealerpro.focus",
+                data.haveFocus, data.costFocus);
+        this.font.draw(pose, focus, this.leftPos + 8, this.topPos + 192,
+                cost.focusEnough() ? 0xFF9BE39B : 0xFFE39B9B);
     }
 
     private void drawSealButton(PoseStack pose, int mouseX, int mouseY, MsgSyncOptions data) {
@@ -239,7 +234,7 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         boolean enabled = canSeal(data);
         int x = this.leftPos + SEAL_X;
         int y = this.topPos + SEAL_Y;
-        boolean hovered = isInside(mouseX, mouseY, x, y, SEAL_W, SEAL_H);
+        boolean hovered = PanelLayout.inside(mouseX, mouseY, x, y, SEAL_W, SEAL_H);
         int background = enabled ? (hovered ? 0xFF5C8A3E : 0xFF4A6B34) : 0xFF2A2A31;
         fill(pose, x, y, x + SEAL_W, y + SEAL_H, background);
         fill(pose, x, y, x + SEAL_W, y + 1, 0xFF6B6B76);
@@ -249,25 +244,26 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
     }
 
     private boolean canSeal(MsgSyncOptions data) {
-        return data.canSeal && this.selectedOptionId != null;
+        return data.canSeal && this.selection.hasOption();
+    }
+
+    private boolean isSelected(MsgSyncOptions.OptionEntry entry) {
+        if (!this.selection.hasOption()) {
+            return false;
+        }
+        return this.selection.selectedOption().id().equals(entry.id().toString())
+                && this.selection.selectedOption().prefix() == (entry.type() == 0);
     }
 
     private List<MsgSyncOptions.OptionEntry> visibleOptions(MsgSyncOptions data) {
-        int type = currentType(data);
+        boolean prefix = this.selection.effectivePrefix();
         List<MsgSyncOptions.OptionEntry> result = new ArrayList<>();
         for (MsgSyncOptions.OptionEntry entry : data.options) {
-            if (entry.type() == type) {
+            if ((entry.type() == 0) == prefix) {
                 result.add(entry);
             }
         }
         return result;
-    }
-
-    private int currentType(MsgSyncOptions data) {
-        if (this.selectedTarget > 0 && this.selectedTarget - 1 < data.targets.size()) {
-            return data.targets.get(this.selectedTarget - 1).type();
-        }
-        return this.toggleType.ordinal();
     }
 
     private record Row(Component label, boolean addEntry) {
@@ -280,10 +276,6 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
             rows.add(new Row(entry.display(), false));
         }
         return rows;
-    }
-
-    private boolean isInside(double mouseX, double mouseY, int x, int y, int width, int height) {
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 
     @Override
@@ -304,54 +296,74 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         if (mouseY >= toggleY && mouseY < toggleY + TOGGLE_H) {
             int toggleX = this.leftPos + LEFT_LIST_X;
             if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
-                this.toggleType = VaultGearModifier.AffixType.PREFIX;
-                this.selectedTarget = 0;
+                this.selection.setAddPrefix(true);
+                this.selection.resetOptionScroll();
                 return true;
             }
             toggleX += TOGGLE_W + 4;
             if (mouseX >= toggleX && mouseX < toggleX + TOGGLE_W) {
-                this.toggleType = VaultGearModifier.AffixType.SUFFIX;
-                this.selectedTarget = 0;
+                this.selection.setAddPrefix(false);
+                this.selection.resetOptionScroll();
                 return true;
             }
         }
 
         int leftX = this.leftPos + LEFT_LIST_X;
         int listY = this.topPos + LIST_Y;
-        if (isInside(mouseX, mouseY, leftX, listY, LEFT_LIST_W, LIST_HEIGHT)) {
+        if (PanelLayout.inside(mouseX, mouseY, leftX, listY, LEFT_LIST_W, LIST_HEIGHT)) {
             int row = (int) ((mouseY - listY) / LIST_ROW_HEIGHT);
             List<MsgSyncOptions.OptionEntry> options = visibleOptions(data);
-            int index = this.optionScroll + row;
+            int index = this.selection.optionScroll() + row;
             if (index >= 0 && index < options.size()) {
                 MsgSyncOptions.OptionEntry entry = options.get(index);
-                this.selectedOptionId = entry.id();
-                this.selectedOptionType = entry.type();
+                this.selection.selectOption(new SealOptionKey(entry.id().toString(), entry.type() == 0));
                 return true;
             }
             return false;
         }
 
         int rightX = this.leftPos + RIGHT_LIST_X;
-        if (isInside(mouseX, mouseY, rightX, listY, RIGHT_LIST_W, LIST_HEIGHT)) {
+        if (PanelLayout.inside(mouseX, mouseY, rightX, listY, RIGHT_LIST_W, LIST_HEIGHT)) {
             int row = (int) ((mouseY - listY) / LIST_ROW_HEIGHT);
-            int index = this.targetScroll + row;
+            int index = this.selection.targetScroll() + row;
             List<Row> rows = targetRows(data);
             if (index >= 0 && index < rows.size()) {
-                this.selectedTarget = index;
-                this.optionScroll = 0;
+                boolean prefix = index == SelectionModel.ADD_ROW
+                        || data.targets.get(index - 1).type() == 0;
+                this.selection.selectTarget(index, prefix);
+                this.selection.clearOption();
+                this.selection.resetOptionScroll();
                 return true;
             }
             return false;
         }
 
-        if (canSeal(data) && isInside(mouseX, mouseY, this.leftPos + SEAL_X, this.topPos + SEAL_Y, SEAL_W, SEAL_H)) {
-            VaultGearModifier.AffixType type = VaultGearModifier.AffixType.values()[currentType(data)];
-            NetworkHandler.sendToServer(new MsgCommitSeal(this.selectedOptionId, type, this.selectedTarget - 1));
-            this.selectedOptionId = null;
-            this.selectedOptionType = -1;
+        if (canSeal(data) && PanelLayout.inside(mouseX, mouseY, this.leftPos + SEAL_X,
+                this.topPos + SEAL_Y, SEAL_W, SEAL_H)) {
+            this.sendSeal(data);
             return true;
         }
         return false;
+    }
+
+    private void sendSeal(MsgSyncOptions data) {
+        SealRequest request = this.selection.toRequest();
+        MsgSyncOptions.OptionEntry chosen = null;
+        for (MsgSyncOptions.OptionEntry entry : data.options) {
+            if (entry.id().toString().equals(request.option().id())
+                    && (entry.type() == 0) == request.option().prefix()) {
+                chosen = entry;
+                break;
+            }
+        }
+        if (chosen == null) {
+            return;
+        }
+        VaultGearModifier.AffixType type = request.option().prefix()
+                ? VaultGearModifier.AffixType.PREFIX
+                : VaultGearModifier.AffixType.SUFFIX;
+        NetworkHandler.sendToServer(new MsgCommitSeal(chosen.id(), type, request.targetIndex()));
+        this.selection.clearOption();
     }
 
     @Override
@@ -360,21 +372,16 @@ public class GearSealerProScreen extends AbstractContainerScreen<GearSealerProMe
         int leftX = this.leftPos + LEFT_LIST_X;
         int rightX = this.leftPos + RIGHT_LIST_X;
         MsgSyncOptions data = ClientSealData.get();
-        if (isInside(mouseX, mouseY, leftX, listY, LEFT_LIST_W, LIST_HEIGHT)) {
-            int max = Math.max(0, visibleOptions(data).size() - LIST_ROWS);
-            this.optionScroll = clamp(this.optionScroll + (delta < 0 ? 1 : -1), 0, max);
+        int step = delta < 0 ? 1 : -1;
+        if (PanelLayout.inside(mouseX, mouseY, leftX, listY, LEFT_LIST_W, LIST_HEIGHT)) {
+            this.selection.scrollOptions(step, visibleOptions(data).size());
             return true;
         }
-        if (isInside(mouseX, mouseY, rightX, listY, RIGHT_LIST_W, LIST_HEIGHT)) {
-            int max = Math.max(0, targetRows(data).size() - LIST_ROWS);
-            this.targetScroll = clamp(this.targetScroll + (delta < 0 ? 1 : -1), 0, max);
+        if (PanelLayout.inside(mouseX, mouseY, rightX, listY, RIGHT_LIST_W, LIST_HEIGHT)) {
+            this.selection.scrollTargets(step, targetRows(data).size());
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
     }
 
     private String fitText(String text, int maxWidth) {
