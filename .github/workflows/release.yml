@@ -32,6 +32,18 @@ jobs:
         shell: pwsh
         run: .\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon
 
+      - name: Verify tag matches mod_version and adapter
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path gradle.properties -Pattern '^mod_version=(.*)$').Matches.Groups[1].Value.Trim()
+          $tag = '${{ github.ref_name }}'
+          $expected = "v$version-1.18.2"
+          if ($tag -ne $expected) {
+            throw "tag $tag does not match $expected (mod_version=$version, adapter=adapter/1_18_2)"
+          }
+          Write-Host "tag $tag matches mod_version $version for adapter/1_18_2"
+
       - name: Verify adapter jar
         shell: pwsh
         run: |
