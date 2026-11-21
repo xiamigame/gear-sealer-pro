@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " v ",
+    " n "
+  ],
+  "key": {
+    "v": {
+      "item": "the_vault:vault_sealer"
+    },
+    "n": {
+      "item": "minecraft:netherite_ingot"
+    }
+  },
+  "result": {
+    "item": "gearsealerpro:vault_sealer_pro",
+    "count": 1
+  }
+}

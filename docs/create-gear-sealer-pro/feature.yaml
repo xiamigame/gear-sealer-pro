@@ -1,0 +1,32 @@
+feature: create-gear-sealer-pro
+title: Gear Sealer Pro —— 可自选密封词条与替换目标的装备封印台升级版
+created: 2026-11-21
+status: active
+owner_session: session-8e06cba8-ece8-40f3-aae0-60014e5e4dd0
+
+sessions:
+  - id: session-8e06cba8-ece8-40f3-aae0-60014e5e4dd0
+    label: 2026-11-21-create-gear-sealer-pro
+    role: owner
+    status: approved
+    joined: 2026-11-21
+    approved_by: user
+
+git:
+  is_repo: true
+  repo_root: .
+  branch: main
+  base: main
+  worktree: null
+  upstream: null
+  release_line: null
+  version: 0.1.0
+  tags: []
+
+change:
+  source_ref: null            # 全新仓库，无上游
+  source_version: null
+  new_branch: main            # git init -b main
+  release_line_action: none   # 只维护 1.18.2 一条线
+  version_bump: none
+  target_version: 0.1.0       # 首个版本

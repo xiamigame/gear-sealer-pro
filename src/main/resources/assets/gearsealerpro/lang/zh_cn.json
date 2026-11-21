@@ -1,0 +1,12 @@
+{
+  "block.gearsealerpro.vault_sealer_pro": "装备封印台 Pro",
+  "gui.gearsealerpro.sealed_modifiers": "密封词条",
+  "gui.gearsealerpro.targets": "替换目标",
+  "gui.gearsealerpro.prefix": "前缀",
+  "gui.gearsealerpro.suffix": "后缀",
+  "gui.gearsealerpro.add_affix": "新增词条（+1 槽）",
+  "gui.gearsealerpro.seal": "封印",
+  "gui.gearsealerpro.insert_gear": "放入一件装备开始选择",
+  "gui.gearsealerpro.focus": "虚空焦点 %s/%s",
+  "gui.gearsealerpro.cost": "消耗"
+}

@@ -1,0 +1,12 @@
+{
+  "block.gearsealerpro.vault_sealer_pro": "Gear Sealer Pro",
+  "gui.gearsealerpro.sealed_modifiers": "Sealed modifier",
+  "gui.gearsealerpro.targets": "Replace affix",
+  "gui.gearsealerpro.prefix": "Prefix",
+  "gui.gearsealerpro.suffix": "Suffix",
+  "gui.gearsealerpro.add_affix": "Add new affix (+1 slot)",
+  "gui.gearsealerpro.seal": "Seal",
+  "gui.gearsealerpro.insert_gear": "Insert a gear piece to begin",
+  "gui.gearsealerpro.focus": "Vorpal Focus %s/%s",
+  "gui.gearsealerpro.cost": "Cost"
+}
