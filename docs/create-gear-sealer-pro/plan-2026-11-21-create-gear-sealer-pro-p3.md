@@ -151,3 +151,15 @@ gear-sealer-pro/
 - **影响**：仓库结构变更；产物名、mod id、包名、方块注册名、语言键、配方不变。
 - **生效**：2026-11-21
 - **状态**：ACTIVE
+
+### A4 · 2026-11-21 · 提出人：agent
+
+- **类型**：补丁
+- **关联**：A3（CI 部分）
+- **变更**：`release.yml` 增加一步「tag 与 `mod_version` + adapter 目录一致性校验」（提交 `ca21561`）。
+  依据 skill 审计脚本的规则 `workflow validates adapter directory and mod_version`。
+- **证据**：`audit-mod-repo.ps1` → `0 fail, 0 warn`（24 项 PASS）。
+- **影响**：仅 CI 行为；不影响产物。
+- **注意**：已推送的 tag `v0.1.0-1.18.2` 指向 `0dd14f3`（该提交的 workflow 还没有这一步校验），
+  按"不复用/不改写已发布 tag"的规则**没有**移动 tag；校验从下一个 tag 起生效。
+- **状态**：ACTIVE
