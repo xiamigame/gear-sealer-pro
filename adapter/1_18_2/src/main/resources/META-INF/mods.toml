@@ -67,9 +67,12 @@ ordering="NONE"
 side="BOTH"
 
 # The Vault (Vault Hunters) is required: Gear Sealer Pro builds on its gear and sealing API.
+# NOTE: The Vault reports its version as "<mc>-<mod version>" (e.g. 1.18.2-3.21.6.6884).
+# Forge compares dependency ranges with Maven version semantics, so the range must include
+# that prefix; "[3.21.6,)" would be read as major version 3 and never match.
 [[dependencies.${mod_id}]]
 modId="the_vault"
 mandatory=true
-versionRange="[3.21.6,)"
+versionRange="[1.18.2-3.21.6,)"
 ordering="AFTER"
 side="BOTH"
