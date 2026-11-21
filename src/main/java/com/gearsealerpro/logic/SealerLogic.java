@@ -285,9 +285,14 @@ public final class SealerLogic {
             return false;
         }
 
+        ItemStack output = gear.copy();
+        VaultGearData outData = VaultGearData.read(output);
+
+        // The target must be resolved against the copied data: VaultGearData#removeModifier
+        // compares modifier instances by identity, not by value.
         VaultGearModifier<?> replaced = null;
         if (targetIndex >= 0) {
-            List<Target> targets = targets(gear, data);
+            List<Target> targets = targets(gear, outData);
             if (targetIndex >= targets.size()) {
                 return false;
             }
@@ -297,9 +302,6 @@ public final class SealerLogic {
             }
             replaced = target.modifier();
         }
-
-        ItemStack output = gear.copy();
-        VaultGearData outData = VaultGearData.read(output);
 
         VaultGearModifier<?> sealedModifier = option.roll(GearRollHelper.rand);
         sealedModifier.addCategory(VaultGearModifier.AffixCategory.CORRUPTED);
