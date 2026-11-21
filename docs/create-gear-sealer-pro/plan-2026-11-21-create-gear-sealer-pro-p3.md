@@ -213,3 +213,25 @@ gear-sealer-pro/
 - **遗留**：`getDisplay(..., true)` 标注为 `@OnlyIn(Dist.CLIENT)`，服务端计算列表时调用它
   仅保证**集成服务器（单人）**可用；专用服务器需要改成服务端算 id/范围、客户端拼文案。
 - **状态**：ACTIVE
+
+### A7 · 2026-11-21 · 提出人：user（“强行启动会怎样”）
+
+- **类型**：补丁（稳定性，0.1.2 → 0.1.3）
+- **关联**：A6 遗留第 1 条
+- **事实**（字节码核对）：
+  - `VaultGearModifier.getDisplay(data, type, stack, boolean)` 的 4 参重载**无注解**，方法体只是转调 5 参重载；
+  - 5 参重载 `getDisplay(..., boolean, boolean)` 带 `@OnlyIn(Dist.CLIENT)`；
+  - 专用服务器上 Forge `RuntimeDistCleaner` 会删掉该 5 参方法，4 参方法里的 `invokevirtual` 因此抛
+    `NoSuchMethodError`（`LinkageError`，不是 `RuntimeException`）。
+- **原行为**：`SealerLogic.display()/targets()` 只 `catch (RuntimeException)`，兜不住该 Error →
+  异常冒到网络包处理 → 玩家断线；能开界面、能放方块，但只要放装备就炸；存档不受影响。
+- **变更**：两处 catch 改为 `RuntimeException | LinkageError`，降级为
+  `Component.literal(<modifier id>)`；`targets()` 同理。
+- **效果**：
+  - 单人/局域网：行为不变（仍显示数值 + 区间）；
+  - 专用服务器：不再崩，列表显示 `the_vault:<modifier_id>`，无区间；封印/替换/新增逻辑仍可用。
+- **证据**：`.\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon` → `BUILD SUCCESSFUL`；
+  产物 `adapter/1_18_2/build/libs/gearsealerpro-1.18.2-0.1.3.jar`。
+- **未验证**：没有真实专用服务器环境实测（无服务器可起），结论基于 Forge 的 DistCleaner 语义与字节码。
+- **遗留**：专用服务器上的可读文案仍需"服务端发 id、客户端拼显示"的改造（约 1–2 小时 + 服务器实测）。
+- **状态**：ACTIVE

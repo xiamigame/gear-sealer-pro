@@ -161,8 +161,10 @@ public final class SealerLogic {
             if (rendered.isPresent()) {
                 return rendered.get();
             }
-        } catch (RuntimeException ignored) {
-            // Fall through to the identifier below; a broken display must never break the list.
+        } catch (RuntimeException | LinkageError ignored) {
+            // The Vault's display helpers are @OnlyIn(CLIENT) and get stripped on a dedicated
+            // server (NoSuchMethodError is a LinkageError). Degrade to the identifier instead
+            // of breaking the option list.
         }
         return new TextComponent(group.getIdentifier().toString()).withStyle(ChatFormatting.GRAY);
     }
@@ -181,7 +183,7 @@ public final class SealerLogic {
                     display = modifier.getDisplay(data, type, gear, false)
                             .<Component>map(component -> component)
                             .orElseGet(() -> new TextComponent(String.valueOf(modifier.getModifierIdentifier())));
-                } catch (RuntimeException exception) {
+                } catch (RuntimeException | LinkageError exception) {
                     display = new TextComponent(String.valueOf(modifier.getModifierIdentifier()));
                 }
                 result.add(new Target(type, modifier, display));
