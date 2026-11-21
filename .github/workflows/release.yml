@@ -1,0 +1,47 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    # Self-hosted runner: it must have JDK 17, the official Gradle wrapper works offline-cached,
+    # and the repository variable THE_VAULT_JAR must point at the_vault-1.18.2-3.21.6.6884.jar.
+    runs-on: [self-hosted, windows, x64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Provide The Vault dependency
+        shell: pwsh
+        run: |
+          $src = "${{ vars.THE_VAULT_JAR }}"
+          if ([string]::IsNullOrWhiteSpace($src) -or -not (Test-Path $src)) {
+            throw "Repository variable THE_VAULT_JAR is not set or does not exist: '$src'"
+          }
+          New-Item -ItemType Directory -Force -Path libs | Out-Null
+          Copy-Item $src 'libs/the_vault-1.18.2-3.21.6.6884.jar' -Force
+
+      - name: Test common and build adapter
+        shell: pwsh
+        run: .\gradlew.bat :common:test :adapter:1_18_2:build --no-daemon
+
+      - name: Verify adapter jar
+        shell: pwsh
+        run: |
+          $jar = Get-ChildItem 'adapter/1_18_2/build/libs/gearsealerpro-*-*.jar' | Select-Object -First 1
+          if (-not $jar) { throw 'adapter jar not found' }
+          Write-Host "artifact: $($jar.FullName) ($($jar.Length) bytes)"
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: adapter/1_18_2/build/libs/gearsealerpro-*-*.jar
+          generate_release_notes: true

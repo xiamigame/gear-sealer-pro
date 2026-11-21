@@ -14,12 +14,12 @@ out
 .idea
 
 # gradle
-build
+build/
 .gradle
 
 # other
 eclipse
-run
+run/
 
 # Files from Forge MDK
 forge*changelog.txt
@@ -31,3 +31,5 @@ libs/
 .acl-recovery/
 .dsh-probe
 run-data/
+adapter/*/run/
+adapter/*/build/
